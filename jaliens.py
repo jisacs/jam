@@ -108,9 +108,9 @@ def main(winstyle = 0):
 	#Load images, assign to sprite classes
 	#(do this before the classes are used, after screen setup)
 	up = load_image('carup.jpg')
-	up = load_image('cardown.jpg')
-	up = load_image('carright.jpg')
-	up = load_image('carleft.jpg')
+	down = load_image('cardown.jpg')
+	right = load_image('carright.jpg')
+	left = load_image('carleft.jpg')
 	Player.images = [up,down,right,left]
 
 	
