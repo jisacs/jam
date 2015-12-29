@@ -167,6 +167,8 @@ def main(winstyle = 0):
 	#assign default groups to each sprite class
 	Player.containers = all
 	Road.containers = roads,all
+	
+	
 
 	#Create Some Starting Values
 	clock = pygame.time.Clock()
@@ -178,6 +180,7 @@ def main(winstyle = 0):
 	Road((1,1),Road.HORIZONTAL) #note, this 'lives' because it goes into a sprite group
 	player = Player()
 
+	all.change_layer(player,0)
 	while player.alive():
 
 		#get input
