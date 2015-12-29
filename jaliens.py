@@ -54,6 +54,36 @@ def load_images(*files):
 # the keyboard
 
 
+
+class Road(pygame.sprite.Sprite):
+	"""
+	"""
+	VERTICAL = 0
+	HORIZONTAL = 1
+	speed = 10
+	bounce = 24
+	SIZE = (200,200)
+	images = []
+	
+	def __init__(self,pos,direction=VERTICAL):
+		"""
+		Parameters
+		----------
+		pos: tuple(x,y)
+		"""
+		pygame.sprite.Sprite.__init__(self, self.containers)
+		self.image = self.images[direction]
+		
+		val = (pos[0]*self.SIZE[0],pos[1]*self.SIZE[1])
+		print('val: ', val)
+		self.rect = self.image.get_rect(topleft=(val))
+		
+		print('self.rect ', self.rect )
+		self.reloading = 0
+		self.origtop = self.rect.top
+		print('SCREENRECT.midbottom',SCREENRECT.midbottom)
+
+
 class Player(pygame.sprite.Sprite):
 	speed = 10
 	bounce = 24
@@ -92,7 +122,6 @@ class Player(pygame.sprite.Sprite):
 			self.image = self.images[IMAGE_UP]
 		elif ydir > 0:
 			self.image = self.images[IMAGE_DOWN]
-
 		#self.rect.top = self.origtop - (self.rect.left//self.bounce%2)
 
 
@@ -113,6 +142,9 @@ def main(winstyle = 0):
 	left = load_image('carleft.jpg')
 	Player.images = [up,down,right,left]
 
+	hor = load_image('road_hor.jpg')
+	ver = load_image('road_ver.jpg')
+	Road.images = [ver,hor]
 	
 	#decorate the game window
 	pygame.display.set_caption('Pygame Aliens')
@@ -120,24 +152,30 @@ def main(winstyle = 0):
 	"""
 	#create the background, tile the bgd image
 	"""
-	bgdtile = load_image('plan.jpg')
+	bgdtile = load_image('white_map.jpg')
 	background = pygame.Surface(SCREENRECT.size)
 	for x in range(0, SCREENRECT.width, bgdtile.get_width()):
 		background.blit(bgdtile, (x, 0))
 	screen.blit(background, (0,0))
 	pygame.display.flip()
 	
+	
+	roads = pygame.sprite.Group()
 	all = pygame.sprite.RenderUpdates()
 
 	#assign default groups to each sprite class
 	Player.containers = all
+	Road.containers = roads,all
 
 	#Create Some Starting Values
 	clock = pygame.time.Clock()
 
 	#initialize our starting sprites
+	
+	Road((0,0),Road.VERTICAL) #note, this 'lives' because it goes into a sprite group7
+	Road((0,1),Road.VERTICAL) #note, this 'lives' because it goes into a sprite group7
+	Road((1,1),Road.HORIZONTAL) #note, this 'lives' because it goes into a sprite group
 	player = Player()
-
 
 	while player.alive():
 
