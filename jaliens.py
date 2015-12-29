@@ -19,6 +19,12 @@ BOMB_ODDS      = 60    #chances a new bomb will drop
 ALIEN_RELOAD   = 12     #frames between new aliens
 SCREENRECT     = Rect(0, 0, 640, 480)
 
+IMAGE_UP = 0
+IMAGE_DOWN = 1
+IMAGE_RIGHT = 2
+IMAGE_LEFT = 3
+
+
 
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 
@@ -79,10 +85,14 @@ class Player(pygame.sprite.Sprite):
 		self.rect = self.rect.clamp(SCREENRECT)
 		
 		if xdir < 0:
-			self.image = self.images[0]
+			self.image = self.images[IMAGE_LEFT]
 		elif xdir > 0:
-			self.image = self.images[1]
-			
+			self.image = self.images[IMAGE_RIGHT]
+		elif ydir < 0:
+			self.image = self.images[IMAGE_UP]
+		elif ydir > 0:
+			self.image = self.images[IMAGE_DOWN]
+
 		#self.rect.top = self.origtop - (self.rect.left//self.bounce%2)
 
 
@@ -97,8 +107,11 @@ def main(winstyle = 0):
 
 	#Load images, assign to sprite classes
 	#(do this before the classes are used, after screen setup)
-	img = load_image('player1.gif')
-	Player.images = [img, pygame.transform.flip(img, 1, 0)]
+	up = load_image('carup.jpg')
+	up = load_image('cardown.jpg')
+	up = load_image('carright.jpg')
+	up = load_image('carleft.jpg')
+	Player.images = [up,down,right,left]
 
 	
 	#decorate the game window
