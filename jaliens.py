@@ -17,12 +17,14 @@ MAX_SHOTS      = 2      #most player bullets onscreen
 ALIEN_ODDS     = 22     #chances a new alien appears
 BOMB_ODDS      = 60    #chances a new bomb will drop
 ALIEN_RELOAD   = 12     #frames between new aliens
-SCREENRECT     = Rect(0, 0, 640*2, 480*2)
+SCREENRECT     = Rect(0, 0,1000, 1000)
 
 IMAGE_UP = 0
 IMAGE_DOWN = 1
 IMAGE_RIGHT = 2
 IMAGE_LEFT = 3
+X = 0
+Y  = 1
 
 
 
@@ -43,6 +45,14 @@ def load_images(*files):
 		imgs.append(load_image(file))
 	return imgs
 
+def getPixelArray(filename):
+	try:
+		image = pygame.image.load(filename)
+	except pygame.error, message:
+		print ("Cannot load image:", filename)
+		raise SystemExit, message
+	
+	return pygame.surfarray.array3d(image)
 
 
 # each type of game object gets an init and an
@@ -60,9 +70,14 @@ class Road(pygame.sprite.Sprite):
 	"""
 	VERTICAL = 0
 	HORIZONTAL = 1
-	speed = 10
+	START = 2
+	BR = 3
+	BL = 4
+	TL = 5
+	TR = 6
+
 	bounce = 24
-	SIZE = (200,200)
+	SIZE = (10,10)
 	images = []
 	
 	def __init__(self,pos,direction=VERTICAL):
@@ -75,13 +90,12 @@ class Road(pygame.sprite.Sprite):
 		self.image = self.images[direction]
 		
 		val = (pos[0]*self.SIZE[0],pos[1]*self.SIZE[1])
-		print('val: ', val)
 		self.rect = self.image.get_rect(topleft=(val))
 		
-		print('self.rect ', self.rect )
+	
 		self.reloading = 0
 		self.origtop = self.rect.top
-		print('SCREENRECT.midbottom',SCREENRECT.midbottom)
+
 
 
 class Player(pygame.sprite.Sprite):
@@ -92,10 +106,9 @@ class Player(pygame.sprite.Sprite):
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		self.image = self.images[0]
 		self.rect = self.image.get_rect(midbottom=SCREENRECT.midbottom)
-		print('self.rect ', self.rect )
 		self.reloading = 0
 		self.origtop = self.rect.top
-		print('SCREENRECT.midbottom',SCREENRECT.midbottom)
+
 
 
 	def move(self, keystate):
@@ -144,11 +157,16 @@ def main(winstyle = 0):
 
 	hor = load_image('road_hor.jpg')
 	ver = load_image('road_ver.jpg')
-	Road.images = [ver,hor]
+	br = load_image('road_bottom_right.jpg')
+	bl = load_image('road_bottom_left.jpg')
+	tl = load_image('road_top_left.jpg')
+	tr = load_image('road_top_right.jpg')
+	start = load_image('one.jpg')
+	Road.images = [ver,hor,start,br,bl,tl,tr]
 	
 	#decorate the game window
 	pygame.display.set_caption('Pygame Aliens')
-	pygame.mouse.set_visible(0)
+	#pygame.mouse.set_visible(0)
 	"""
 	#create the background, tile the bgd image
 	"""
@@ -163,6 +181,7 @@ def main(winstyle = 0):
 	
 	roads = pygame.sprite.Group()
 	all = pygame.sprite.RenderUpdates()
+	allgroup = pygame.sprite.LayeredUpdates() # more sophisticated, can draw sprites in layers 
 
 	#assign default groups to each sprite class
 	Player.containers = all
@@ -173,15 +192,79 @@ def main(winstyle = 0):
 	#Create Some Starting Values
 	clock = pygame.time.Clock()
 
-	#initialize our starting sprites
 	
-	Road((0,0),Road.VERTICAL) #note, this 'lives' because it goes into a sprite group7
-	Road((0,1),Road.VERTICAL) #note, this 'lives' because it goes into a sprite group7
-	Road((1,1),Road.HORIZONTAL) #note, this 'lives' because it goes into a sprite group
-	player = Player()
+	"""
+	roads=((0,0),(1,0),(2,0) ,(3,0), \
+							 (3,1) , \
+							 (3,2) , \
+				(1,3) ,(2,3), (3,3) , \
+				(1,4), \
+				(1,5)
+						 )
+	"""
+	
+	pixels = getPixelArray(os.path.join (main_dir, 'data', 'real_map.jpg'))
+	#roads =  pygame.PixelArray (surface)
+	#print('road:',type(road))
+	#Road(roads[0,0],Road.START) #note, this 'lives' because it goes into a sprite group7
+	
+	print('shape:', pixels.shape)
+	x_len,y_len,z_len = pixels.shape
+	print('shape:', pixels.shape)
+	print(x_len,y_len)
+	"""
+	for i in range(1000):
+		pos = (i,i)
+		print('pos', pos)
+		Road(pos,Road.START)
+	"""
+	
+	for x in range(x_len):
+		for y in range(y_len):
+			color = pixels[x,y]
+			print('x,y,color:',x,y,color[0])
+			level = 200
+			if color[0] < level or  color[1] < level or  color[2] < level:
+				for i in range(10):
+					pos = (x,y) 
+					print('pos:',pos,color[0])
+					Road(pos,Road.START)
+	"""
+		is_a_corner = False
+		try:
+			if road[X-1,Y] < road[X] and last[Y] > road[Y]:
+				print('DEBUG TL')
+				Road(road,Road.TL)
+				is_a_corner = True
+			elif next_r[X] > road[X] and last[Y] > road[Y]:
+				Road(road,Road.TR)
+				print('DEBUG TR')
+				is_a_corner = True
+			elif last[X] < road[X] and last[Y] > road[Y]:
+				Road(road,Road.BL)
+				print('DEBUG BL')
+				is_a_corner = True
+			elif next_r[X] < road[X] and last[Y] < road[Y]:
+				Road(road,Road.BR)
+				print('DEBUG BR')
+				is_a_corner = True
+		except:
+			pass
+		if not is_a_corner :
+			if last[X] != road[X]:
+				Road(road,Road.HORIZONTAL)
+				print('DEBUG HOR')
+			else:
+				Road(road,Road.VERTICAL)
+				print('DEBUG VER')
+	"""
+	#initialize our starting sprites
+	#player = Player()
+	
 
-	all.change_layer(player,0)
-	while player.alive():
+	
+	#allgroup.change_layer(player,0)
+	while True:#player.alive():
 
 		#get input
 		for event in pygame.event.get():
@@ -200,7 +283,7 @@ def main(winstyle = 0):
 		UP DOWN LEFT RIGHT
 		272 273 274   275
 		"""
-		player.move(keystate)
+		#player.move(keystate)
 
 		#draw the scene
 		dirty = all.draw(screen)
