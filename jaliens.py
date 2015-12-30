@@ -259,12 +259,12 @@ def main(winstyle = 0):
 				print('DEBUG VER')
 	"""
 	#initialize our starting sprites
-	#player = Player()
+	player = Player()
 	
 
 	
 	#allgroup.change_layer(player,0)
-	while True:#player.alive():
+	while player.alive():
 
 		#get input
 		for event in pygame.event.get():
@@ -283,7 +283,7 @@ def main(winstyle = 0):
 		UP DOWN LEFT RIGHT
 		272 273 274   275
 		"""
-		#player.move(keystate)
+		player.move(keystate)
 
 		#draw the scene
 		dirty = all.draw(screen)
