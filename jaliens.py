@@ -64,6 +64,47 @@ def getPixelArray(filename):
 # the keyboard
 
 
+class Block(pygame.sprite.Sprite):
+	"""
+	"""
+	VERTICAL = 0
+	HORIZONTAL = 1
+	START = 2
+	BR = 3
+	BL = 4
+	TL = 5
+	TR = 6
+
+	bounce = 24
+	SIZE = (100,100)
+	
+	
+
+	# Constructor. Pass in the color of the block,
+	# and its x and y position
+	def __init__(self, pos):
+		# Call the parent class (Sprite) constructor
+		pygame.sprite.Sprite.__init__(self)
+
+	
+		self.color=(100,100,30)
+		# Create an image of the block, and fill it with a color.
+		# This could also be an image loaded from the disk.
+		self.image = pygame.Surface([self.SIZE[X], self.SIZE[Y]])
+		self.image.fill(self.color)
+
+		# Fetch the rectangle object that has the dimensions of the image
+		# Update the position of this object by setting the values of rect.x and rect.y
+		self.rect = self.image.get_rect()
+
+		#val = (pos[0]*self.SIZE[0],pos[1]*self.SIZE[1])
+		#self.rect = self.image.get_rect(topleft=(val))
+		
+	
+		#self.reloading = 0
+		#self.origtop = self.rect.top
+
+
 
 class Road(pygame.sprite.Sprite):
 	"""
@@ -111,7 +152,7 @@ class Player(pygame.sprite.Sprite):
 
 
 
-	def move(self, keystate):
+	def move(self, keystate,blocks):
 		"""
 		UP DOWN LEFT RIGHT
 		272 273 274   275
@@ -122,9 +163,16 @@ class Player(pygame.sprite.Sprite):
 		#if direction: self.facing = direction
 		xdir= keystate[K_RIGHT] - keystate[K_LEFT]
 		ydir = keystate[K_DOWN] - keystate[K_UP]
+		new_x = xdir*self.speed
+		new_y = ydir*self.speed
 		self.rect.move_ip(xdir*self.speed, ydir*self.speed)
-		
-		
+		# See if the Sprite block has collided with anything in the Group block_list
+		# The True flag will remove the sprite in block_list
+		blocks_hit_list = pygame.sprite.spritecollide(self, blocks, False)
+		if len(blocks_hit_list) > 0:
+			self.rect.move_ip(-xdir*self.speed, -ydir*self.speed)
+			return 
+			
 		self.rect = self.rect.clamp(SCREENRECT)
 		
 		if xdir < 0:
@@ -170,6 +218,7 @@ def main(winstyle = 0):
 	"""
 	#create the background, tile the bgd image
 	"""
+	
 	bgdtile = load_image('white_map.jpg')
 	background = pygame.Surface(SCREENRECT.size)
 	for x in range(0, SCREENRECT.width, bgdtile.get_width()):
@@ -180,12 +229,14 @@ def main(winstyle = 0):
 	
 	
 	roads = pygame.sprite.Group()
-	all = pygame.sprite.RenderUpdates()
-	allgroup = pygame.sprite.LayeredUpdates() # more sophisticated, can draw sprites in layers 
+	blocks = pygame.sprite.Group()
+	#all = pygame.sprite.RenderUpdates()
+	all = pygame.sprite.LayeredUpdates() # more sophisticated, can draw sprites in layers 
 
 	#assign default groups to each sprite class
 	Player.containers = all
 	Road.containers = roads,all
+	Block.containers=blocks,all
 	
 	
 
@@ -203,7 +254,7 @@ def main(winstyle = 0):
 						 )
 	"""
 	
-	pixels = getPixelArray(os.path.join (main_dir, 'data', 'real_map.jpg'))
+	pixels = getPixelArray(os.path.join (main_dir, 'data', 'carrefour.jpg'))
 	#roads =  pygame.PixelArray (surface)
 	#print('road:',type(road))
 	#Road(roads[0,0],Road.START) #note, this 'lives' because it goes into a sprite group7
@@ -221,43 +272,15 @@ def main(winstyle = 0):
 	
 	for x in range(x_len):
 		for y in range(y_len):
-			color = pixels[x,y]
-			print('x,y,color:',x,y,color[0])
+			color = pixels[x,y] 
 			level = 200
 			if color[0] < level or  color[1] < level or  color[2] < level:
 				for i in range(10):
 					pos = (x,y) 
-					print('pos:',pos,color[0])
+					
 					Road(pos,Road.START)
-	"""
-		is_a_corner = False
-		try:
-			if road[X-1,Y] < road[X] and last[Y] > road[Y]:
-				print('DEBUG TL')
-				Road(road,Road.TL)
-				is_a_corner = True
-			elif next_r[X] > road[X] and last[Y] > road[Y]:
-				Road(road,Road.TR)
-				print('DEBUG TR')
-				is_a_corner = True
-			elif last[X] < road[X] and last[Y] > road[Y]:
-				Road(road,Road.BL)
-				print('DEBUG BL')
-				is_a_corner = True
-			elif next_r[X] < road[X] and last[Y] < road[Y]:
-				Road(road,Road.BR)
-				print('DEBUG BR')
-				is_a_corner = True
-		except:
-			pass
-		if not is_a_corner :
-			if last[X] != road[X]:
-				Road(road,Road.HORIZONTAL)
-				print('DEBUG HOR')
-			else:
-				Road(road,Road.VERTICAL)
-				print('DEBUG VER')
-	"""
+					#Block(pos)
+
 	#initialize our starting sprites
 	player = Player()
 	
@@ -283,14 +306,14 @@ def main(winstyle = 0):
 		UP DOWN LEFT RIGHT
 		272 273 274   275
 		"""
-		player.move(keystate)
+		player.move(keystate,roads)
 
 		#draw the scene
 		dirty = all.draw(screen)
 		pygame.display.update(dirty)
 
 		#cap the framerate
-		clock.tick(40)
+		clock.tick(100)
 
 	pygame.time.wait(1000)
 	pygame.quit()
