@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import random, os.path
-
-
 #import basic pygame modules
 import pygame
 from pygame.locals import *
@@ -11,12 +9,6 @@ from pygame.locals import *
 if not pygame.image.get_extended():
 	raise SystemExit("Sorry, extended image module required")
 
-
-#game constants
-MAX_SHOTS      = 2      #most player bullets onscreen
-ALIEN_ODDS     = 22     #chances a new alien appears
-BOMB_ODDS      = 60    #chances a new bomb will drop
-ALIEN_RELOAD   = 12     #frames between new aliens
 SCREENRECT     = Rect(0, 0,800, 600)
 
 IMAGE_UP = 0
@@ -143,20 +135,10 @@ class Player(pygame.sprite.Sprite):
 	
 
 	def move(self, keystate,blocks):
-		"""
-		UP DOWN LEFT RIGHT
-		272 273 274   275
-		"""
-		
-		#direction = keystate[K_RIGHT] - keystate[K_LEFT]
-		
-		#if direction: self.facing = direction
 		xdir= keystate[K_RIGHT] - keystate[K_LEFT]
 		ydir = keystate[K_DOWN] - keystate[K_UP]
 		if xdir == 0 and ydir == 0:
 			return
-		
-		
 		self.rect.move_ip(xdir*Block.SIZE[X], ydir*Block.SIZE[Y])
 		# See if the Sprite block has collided with anything in the Group block_list
 		# The True flag will remove the sprite in block_list
@@ -164,40 +146,9 @@ class Player(pygame.sprite.Sprite):
 		if len(blocks_hit_list) == 0:
 			self.rect.move_ip(-xdir*Block.SIZE[X], -ydir*Block.SIZE[Y])
 			return 
-			
-		
-		"""
-		if self.block_type == Road.START:
-			elf.rect.move_ip(-self.offset[X],-self. offset[Y])
-		
-		else:
-			if self.direction[X] != xdir or self.direction[Y] != ydir:
-				print("DEBUG A0")
-				if xdir == 1 and (self.direction[X] == -1 ):
-					self.offset[Y]=5
-				elif xdir == 1 and (self.direction[X] == 0 ):
-					self.offset[Y]=2.5
-				elif xdir == -1 and (self.direction[X] == 1 ):
-					self.offset[Y]=-5
-				elif xdir == -1 and (self.direction[X] == 0 ):
-					self.offset[Y]=-2.5
-				if ydir == 1 and (self.direction[Y] == -1 ):
-					self.offset[X]=-5
-				elif ydir == 1 and (self.direction[Y] == 0 ):
-					self.offset[X]=-2.5
-				elif ydir == -1 and (self.direction[Y] == 1 ):
-					self.offset[X]=5
-				elif ydir == -1 and (self.direction[Y] == 0 ):
-					self.offset[X]=2.5
-									
-					
-				self.rect.move_ip(self.offset[X],self. offset[Y])
-		"""
-		
 		
 		rect = self.rect.clamp(SCREENRECT)
 		self.direction=(xdir,ydir)
-		
 		
 		if xdir < 0:
 			self.image = self.images[IMAGE_LEFT]
