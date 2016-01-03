@@ -76,6 +76,7 @@ class Block(pygame.sprite.Sprite):
 	TL = 5
 	TR = 6
 	UNKNOWN = 7
+	VERTICAL = 8
 
 	bounce = 24
 	SIZE = (25,25)
@@ -103,7 +104,7 @@ class Block(pygame.sprite.Sprite):
 	def get_type(color):
 		level = 2
 		if color[0] < level and  color[1] < level and  color[2] < level:
-			return Block.HORIZONTAL
+			return Block.ROAD
 		elif color[0] > 180  and color[1] < 50 and  color[2] < 50:
 			return Block.START
 		elif color[0] > 250 and color[1] > 250 and color[2] > 250: # WHITE
@@ -245,9 +246,9 @@ def main(winstyle = 0):
 	for x in range(x_len):
 		for y in range(y_len):
 			color = pixels[x,y]
-			road_type = Block.get_type(color)
+			block_type = Block.get_type(color)
 			pos = (x,y) 
-			if road_type != None:
+			if block_type = Block.ROAD:
 				types=dict()
 				for x_neig in  range(x_len):
 					for y_neig in  range(y_len):
@@ -267,9 +268,9 @@ def main(winstyle = 0):
 								if y_neig == y - 1 : types['UP'] = True
 								if y_neig == y + 1 : types['DOWN'] = True
 				print("types:", types)
-				if road_type == Block.HORIZONTAL:
+				if types['LEFT'] and  types['RIGHT'] :
 					Block(pos,Block.HORIZONTAL)
-				elif road_type == Block.VERTICAL:
+				elif types['UP'] and  types['DOWN'] 
 					Block(pos,Block.VERTICAL)
 				elif  road_type == Block.START:
 					Block(pos,Block.START)
