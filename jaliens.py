@@ -123,7 +123,7 @@ class Block(pygame.sprite.Sprite):
 
 
 class Player(pygame.sprite.Sprite):
-	speed = 10
+	size = 10
 	bounce = 24
 	images = []
 	def __init__(self,pos):
@@ -151,14 +151,12 @@ class Player(pygame.sprite.Sprite):
 		#if direction: self.facing = direction
 		xdir= keystate[K_RIGHT] - keystate[K_LEFT]
 		ydir = keystate[K_DOWN] - keystate[K_UP]
-		new_x = xdir*self.speed
-		new_y = ydir*self.speed
-		self.rect.move_ip(xdir*self.speed, ydir*self.speed)
+		self.rect.move_ip(xdir*self.size, ydir*self.size)
 		# See if the Sprite block has collided with anything in the Group block_list
 		# The True flag will remove the sprite in block_list
 		blocks_hit_list = pygame.sprite.spritecollide(self, blocks, False)
 		if len(blocks_hit_list) == 0:
-			self.rect.move_ip(-xdir*self.speed, -ydir*self.speed)
+			self.rect.move_ip(-xdir*self.size, -ydir*self.size)
 			return 
 			
 		self.rect = self.rect.clamp(SCREENRECT)
@@ -171,7 +169,6 @@ class Player(pygame.sprite.Sprite):
 			self.image = self.images[IMAGE_UP]
 		elif ydir > 0:
 			self.image = self.images[IMAGE_DOWN]
-		#self.rect.top = self.origtop - (self.rect.left//self.bounce%2)
 
 
 def main(winstyle = 0):
