@@ -81,20 +81,24 @@ class Block(pygame.sprite.Sprite):
 	SIZE = (25,25)
 	images = []
 	
-	def __init__(self,pos,direction=VERTICAL):
+	def __init__(self,pos,block_type=VERTICAL):
 		"""
 		Parameters
 		----------
 		pos: tuple(x,y)
 		"""
 		pygame.sprite.Sprite.__init__(self, self.containers)
-		self.image = self.images[direction]
+		self.block_type = block_type
+		self.pos = pos
+		self.image = self.images[self.block_type]
 		print('new block pos:',pos)
 		val = (pos[0]*self.SIZE[0]+self.SIZE[0]/2,pos[1]*self.SIZE[1]+self.SIZE[0]/2)
-		print('block center:',val)
 		self.rect = self.image.get_rect(center=(val))
 		self.reloading = 0
 		self.origtop = self.rect.top
+	
+
+		
 	@staticmethod
 	def get_type(color):
 		level = 2
@@ -106,7 +110,14 @@ class Block(pygame.sprite.Sprite):
 			return None
 		else:
 			return Block.UNKNOWN
-
+		
+	@staticmethod
+	def is_a_road(block_type):
+		if block_type == Block.VERTICAL or block_type == Block.HORIZONTAL or  \
+			block_type == Block.START or block_type == Block.BR or \
+			block_type == Block.BL or block_type == Block.TL or block_type == Block.TR:
+			return True
+		return False
 
 
 class Player(pygame.sprite.Sprite):
@@ -236,19 +247,36 @@ def main(winstyle = 0):
 			color = pixels[x,y]
 			road_type = Block.get_type(color)
 			pos = (x,y) 
-			if road_type == None:
-				pass
-			
-			elif road_type == Block.HORIZONTAL:
-				Block(pos,Block.HORIZONTAL)
-			elif road_type == Block.VERTICAL:
-				Block(pos,Block.VERTICAL)
-			elif  road_type == Block.START:
-				Block(pos,Block.START)
-			elif  road_type == Block.UNKNOWN:
-				Block(pos,Block.UNKNOW)
-			else:
-				print (color)
+			if road_type != None:
+				types=dict()
+				for x_neig in  range(x_len):
+					for y_neig in  range(y_len):
+						neig_color = pixels[x_neig,y_neig]
+						if Block.is_a_road(Block.get_type(neig_color)):
+						
+							#types[UP,DOWN,RIGHT,LEFT,TR,TL,DR,DL
+							if x_neig == x - 1:
+								if y_neig == y - 1 : types['TL'] = True
+								if y_neig == y + 1 : types['DL'] = True
+								if y_neig == y : types['LEFT'] = True
+							elif x_neig == x + 1:
+								if y_neig == y - 1 : types['TR'] = True
+								if y_neig == y + 1 : types['DR'] = True
+								if y_neig == y : types['RIGHT'] =True
+							elif x_neig == x :
+								if y_neig == y - 1 : types['UP'] = True
+								if y_neig == y + 1 : types['DOWN'] = True
+				print("types:", types)
+				if road_type == Block.HORIZONTAL:
+					Block(pos,Block.HORIZONTAL)
+				elif road_type == Block.VERTICAL:
+					Block(pos,Block.VERTICAL)
+				elif  road_type == Block.START:
+					Block(pos,Block.START)
+				elif  road_type == Block.UNKNOWN:
+					Block(pos,Block.UNKNOW)
+				else:
+					print (color)
 				
 	#initialize our starting sprites
 	player = Player()
