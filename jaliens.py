@@ -17,7 +17,7 @@ MAX_SHOTS      = 2      #most player bullets onscreen
 ALIEN_ODDS     = 22     #chances a new alien appears
 BOMB_ODDS      = 60    #chances a new bomb will drop
 ALIEN_RELOAD   = 12     #frames between new aliens
-SCREENRECT     = Rect(0, 0,1000, 1000)
+SCREENRECT     = Rect(0, 0,800, 600)
 
 IMAGE_UP = 0
 IMAGE_DOWN = 1
@@ -64,6 +64,7 @@ def getPixelArray(filename):
 # the keyboard
 
 
+
 class Block(pygame.sprite.Sprite):
 	"""
 	"""
@@ -74,51 +75,10 @@ class Block(pygame.sprite.Sprite):
 	BL = 4
 	TL = 5
 	TR = 6
+	UNKNOWN = 7
 
 	bounce = 24
-	SIZE = (100,100)
-	
-	
-
-	# Constructor. Pass in the color of the block,
-	# and its x and y position
-	def __init__(self, pos):
-		# Call the parent class (Sprite) constructor
-		pygame.sprite.Sprite.__init__(self)
-
-	
-		self.color=(100,100,30)
-		# Create an image of the block, and fill it with a color.
-		# This could also be an image loaded from the disk.
-		self.image = pygame.Surface([self.SIZE[X], self.SIZE[Y]])
-		self.image.fill(self.color)
-
-		# Fetch the rectangle object that has the dimensions of the image
-		# Update the position of this object by setting the values of rect.x and rect.y
-		self.rect = self.image.get_rect()
-
-		#val = (pos[0]*self.SIZE[0],pos[1]*self.SIZE[1])
-		#self.rect = self.image.get_rect(topleft=(val))
-		
-	
-		#self.reloading = 0
-		#self.origtop = self.rect.top
-
-
-
-class Road(pygame.sprite.Sprite):
-	"""
-	"""
-	VERTICAL = 0
-	HORIZONTAL = 1
-	START = 2
-	BR = 3
-	BL = 4
-	TL = 5
-	TR = 6
-
-	bounce = 24
-	SIZE = (10,10)
+	SIZE = (25,25)
 	images = []
 	
 	def __init__(self,pos,direction=VERTICAL):
@@ -129,13 +89,23 @@ class Road(pygame.sprite.Sprite):
 		"""
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		self.image = self.images[direction]
-		
-		val = (pos[0]*self.SIZE[0],pos[1]*self.SIZE[1])
-		self.rect = self.image.get_rect(topleft=(val))
-		
-	
+		print('new block pos:',pos)
+		val = (pos[0]*self.SIZE[0]+self.SIZE[0]/2,pos[1]*self.SIZE[1]+self.SIZE[0]/2)
+		print('block center:',val)
+		self.rect = self.image.get_rect(center=(val))
 		self.reloading = 0
 		self.origtop = self.rect.top
+	@staticmethod
+	def get_type(color):
+		level = 2
+		if color[0] < level and  color[1] < level and  color[2] < level:
+			return Block.HORIZONTAL
+		elif color[0] > 180  and color[1] < 50 and  color[2] < 50:
+			return Block.START
+		elif color[0] > 250 and color[1] > 250 and color[2] > 250: # WHITE
+			return None
+		else:
+			return Block.UNKNOWN
 
 
 
@@ -146,7 +116,11 @@ class Player(pygame.sprite.Sprite):
 	def __init__(self):
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		self.image = self.images[0]
-		self.rect = self.image.get_rect(midbottom=SCREENRECT.midbottom)
+		#pos = (SCREENRECT.midbottom[X],SCREENRECT.midbottom[Y]-50)
+		
+		#pos.y = pos.y + self.image.eight
+		#print('pos', pos)
+		self.rect = self.image.get_rect(center=SCREENRECT.topleft)
 		self.reloading = 0
 		self.origtop = self.rect.top
 
@@ -169,7 +143,7 @@ class Player(pygame.sprite.Sprite):
 		# See if the Sprite block has collided with anything in the Group block_list
 		# The True flag will remove the sprite in block_list
 		blocks_hit_list = pygame.sprite.spritecollide(self, blocks, False)
-		if len(blocks_hit_list) > 0:
+		if len(blocks_hit_list) == 0:
 			self.rect.move_ip(-xdir*self.speed, -ydir*self.speed)
 			return 
 			
@@ -189,6 +163,8 @@ class Player(pygame.sprite.Sprite):
 def main(winstyle = 0):
 	# Initialize pygame
 	pygame.init()
+	
+	print('DEBUG 2', SCREENRECT.size)
 
 	# Set the display mode
 	winstyle = 0  # |FULLSCREEN
@@ -203,14 +179,17 @@ def main(winstyle = 0):
 	left = load_image('carleft.jpg')
 	Player.images = [up,down,right,left]
 
+	
 	hor = load_image('road_hor.jpg')
-	ver = load_image('road_ver.jpg')
+	ver = load_image('one.jpg')
 	br = load_image('road_bottom_right.jpg')
 	bl = load_image('road_bottom_left.jpg')
 	tl = load_image('road_top_left.jpg')
 	tr = load_image('road_top_right.jpg')
-	start = load_image('one.jpg')
-	Road.images = [ver,hor,start,br,bl,tl,tr]
+	
+	start = load_image('one.tif')
+	un = load_image('unknow.tif')
+	Block.images = [ver,hor,start,br,bl,tl,tr,un]
 	
 	#decorate the game window
 	pygame.display.set_caption('Pygame Aliens')
@@ -228,14 +207,14 @@ def main(winstyle = 0):
 	pygame.display.flip()
 	
 	
-	roads = pygame.sprite.Group()
-	blocks = pygame.sprite.Group()
+	#roads = pygame.sprite.Group()
 	#all = pygame.sprite.RenderUpdates()
+	blocks = pygame.sprite.Group()
 	all = pygame.sprite.LayeredUpdates() # more sophisticated, can draw sprites in layers 
 
 	#assign default groups to each sprite class
 	Player.containers = all
-	Road.containers = roads,all
+	#Block.containers = roads,all
 	Block.containers=blocks,all
 	
 	
@@ -244,47 +223,40 @@ def main(winstyle = 0):
 	clock = pygame.time.Clock()
 
 	
-	"""
-	roads=((0,0),(1,0),(2,0) ,(3,0), \
-							 (3,1) , \
-							 (3,2) , \
-				(1,3) ,(2,3), (3,3) , \
-				(1,4), \
-				(1,5)
-						 )
-	"""
-	
-	pixels = getPixelArray(os.path.join (main_dir, 'data', 'carrefour.jpg'))
+	pixels = getPixelArray(os.path.join (main_dir, 'data', 'easy.tif'))
 	#roads =  pygame.PixelArray (surface)
 	#print('road:',type(road))
-	#Road(roads[0,0],Road.START) #note, this 'lives' because it goes into a sprite group7
+	#Block(roads[0,0],Block.START) #note, this 'lives' because it goes into a sprite group7
 	
-	print('shape:', pixels.shape)
 	x_len,y_len,z_len = pixels.shape
-	print('shape:', pixels.shape)
 	print(x_len,y_len)
-	"""
-	for i in range(1000):
-		pos = (i,i)
-		print('pos', pos)
-		Road(pos,Road.START)
-	"""
 	
 	for x in range(x_len):
 		for y in range(y_len):
-			color = pixels[x,y] 
-			level = 200
-			if color[0] < level or  color[1] < level or  color[2] < level:
-				for i in range(10):
-					pos = (x,y) 
-					
-					Road(pos,Road.START)
-					#Block(pos)
-
+			color = pixels[x,y]
+			road_type = Block.get_type(color)
+			pos = (x,y) 
+			if road_type == None:
+				pass
+			
+			elif road_type == Block.HORIZONTAL:
+				tmp = Block(pos,Block.HORIZONTAL)
+				blocks_hit_list = pygame.sprite.spritecollide(tmp, blocks, False)
+				if len(blocks_hit_list) > 1:
+					blocks.remove(tmp)
+					del(tmp)
+			elif road_type == Block.VERTICAL:
+				Block(pos,Block.VERTICAL)
+			elif  road_type == Block.START:
+				Block(pos,Block.START)
+			elif  road_type == Block.UNKNOWN:
+				Block(pos,Block.UNKNOW)
+			else:
+				print (color)
+				
 	#initialize our starting sprites
 	player = Player()
 	
-
 	
 	#allgroup.change_layer(player,0)
 	while player.alive():
@@ -306,7 +278,7 @@ def main(winstyle = 0):
 		UP DOWN LEFT RIGHT
 		272 273 274   275
 		"""
-		player.move(keystate,roads)
+		player.move(keystate,blocks)
 
 		#draw the scene
 		dirty = all.draw(screen)
