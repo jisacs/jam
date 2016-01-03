@@ -132,13 +132,15 @@ class Player(pygame.sprite.Sprite):
 		#pos = (SCREENRECT.midbottom[X],SCREENRECT.midbottom[Y]-50)
 		
 		#pos.y = pos.y + self.image.eight
-		#print('pos', pos)
-		val = (pos[X]*Block.SIZE[X],pos[Y]*Block.SIZE[Y])
+		print('Debug a pos', pos)
+		val = (pos[X]*Block.SIZE[X]+Block.SIZE[X]/2,pos[Y]*Block.SIZE[Y]++Block.SIZE[Y]/2)
 		self.rect = self.image.get_rect(center=val)
 		self.reloading = 0
 		self.origtop = self.rect.top
-
-
+		self.direction=(0,0)
+		self.offset=[0,0]
+		self.pos=pos
+	
 
 	def move(self, keystate,blocks):
 		"""
@@ -151,15 +153,51 @@ class Player(pygame.sprite.Sprite):
 		#if direction: self.facing = direction
 		xdir= keystate[K_RIGHT] - keystate[K_LEFT]
 		ydir = keystate[K_DOWN] - keystate[K_UP]
-		self.rect.move_ip(xdir*self.size, ydir*self.size)
+		if xdir == 0 and ydir == 0:
+			return
+		
+		
+		self.rect.move_ip(xdir*Block.SIZE[X], ydir*Block.SIZE[Y])
 		# See if the Sprite block has collided with anything in the Group block_list
 		# The True flag will remove the sprite in block_list
 		blocks_hit_list = pygame.sprite.spritecollide(self, blocks, False)
 		if len(blocks_hit_list) == 0:
-			self.rect.move_ip(-xdir*self.size, -ydir*self.size)
+			self.rect.move_ip(-xdir*Block.SIZE[X], -ydir*Block.SIZE[Y])
 			return 
 			
-		self.rect = self.rect.clamp(SCREENRECT)
+		
+		"""
+		if self.block_type == Road.START:
+			elf.rect.move_ip(-self.offset[X],-self. offset[Y])
+		
+		else:
+			if self.direction[X] != xdir or self.direction[Y] != ydir:
+				print("DEBUG A0")
+				if xdir == 1 and (self.direction[X] == -1 ):
+					self.offset[Y]=5
+				elif xdir == 1 and (self.direction[X] == 0 ):
+					self.offset[Y]=2.5
+				elif xdir == -1 and (self.direction[X] == 1 ):
+					self.offset[Y]=-5
+				elif xdir == -1 and (self.direction[X] == 0 ):
+					self.offset[Y]=-2.5
+				if ydir == 1 and (self.direction[Y] == -1 ):
+					self.offset[X]=-5
+				elif ydir == 1 and (self.direction[Y] == 0 ):
+					self.offset[X]=-2.5
+				elif ydir == -1 and (self.direction[Y] == 1 ):
+					self.offset[X]=5
+				elif ydir == -1 and (self.direction[Y] == 0 ):
+					self.offset[X]=2.5
+									
+					
+				self.rect.move_ip(self.offset[X],self. offset[Y])
+		"""
+		
+		
+		rect = self.rect.clamp(SCREENRECT)
+		self.direction=(xdir,ydir)
+		
 		
 		if xdir < 0:
 			self.image = self.images[IMAGE_LEFT]
@@ -335,7 +373,7 @@ def main(winstyle = 0):
 		pygame.display.update(dirty)
 
 		#cap the framerate
-		clock.tick(40)
+		clock.tick(10)
 
 	pygame.time.wait(1000)
 	pygame.quit()
