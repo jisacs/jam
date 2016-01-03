@@ -18,8 +18,6 @@ IMAGE_LEFT = 3
 X = 0
 Y  = 1
 
-
-
 main_dir = os.path.split(os.path.abspath(__file__))[0]
 
 def load_image(file):
@@ -55,6 +53,77 @@ def getPixelArray(filename):
 # update, since it is passed extra information about
 # the keyboard
 
+class Map():
+	def __init__(self):
+		self.blocks=dict() # key (x,y) value = Blaock reference
+		self.starts=dict()
+		self.links=list()
+		
+	def init_roads(self):
+		for block in self.blocks.values():
+			if block.block_type==Road.START:
+				self.starts[(block.pos[X],block.pos[Y])] = block
+				
+			if (block.pos[X],block.pos[Y]-1)  in self.blocks.keys():
+				block.neighbours["UP"] = self.blocks[(block.pos[X],block.pos[Y]-1)]
+			
+			if (block.pos[X],block.pos[Y]+1)  in self.blocks.keys():
+				block.neighbours["DOWN"] = self.blocks[(block.pos[X],block.pos[Y]+1)]
+			
+			if (block.pos[X]-1,block.pos[Y])  in self.blocks.keys():
+				block.neighbours["LEFT"] = self.blocks[(block.pos[X]-1,block.pos[Y])]
+			
+			if (block.pos[X]+1,block.pos[Y])  in self.blocks.keys():
+				block.neighbours["RIGHT"] = self.blocks[(block.pos[X]+1,block.pos[Y])]
+
+			if (block.pos[X]-1,block.pos[Y]-1)  in self.blocks.keys():
+				block.neighbours["TL"] = self.blocks[(block.pos[X]-1,block.pos[Y]-1)]
+			
+			if (block.pos[X]+1,block.pos[Y]-1)  in self.blocks.keys():
+				block.neighbours["TR"] = self.blocks[(block.pos[X]+1,block.pos[Y]-1)]
+			
+			if (block.pos[X]-1,block.pos[Y]+1)  in self.blocks.keys():
+				block.neighbours["DL"] = self.blocks[(block.pos[X]-1,block.pos[Y]+1)]
+			
+			if (block.pos[X]+1,block.pos[Y]+1)  in self.blocks.keys():
+				block.neighbours["DR"] = self.blocks[(block.pos[X]+1,block.pos[Y]+1)]
+		
+		"""
+		for start in self.starts.values():
+			print("---------start:", start.pos)
+			start_neighbours = start.get_blocks_neighbours()
+			print("-----start_neighbours:", start_neighbours)
+			for current in start_neighbours.values():
+				print("---current:", current.pos)
+				l2_neighbours = current.get_blocks_neighbours() 
+				print("---l2_neighbours", l2_neighbours)
+				while len(l2_neighbours) >= 2:
+					link=list()
+					if current not in link:
+						link.append(current)
+						print("-New list append current:", current.pos)
+					for l2_neighbour in l2_neighbours.values():
+						if l2_neighbour.block_type != Road.START and l2_neighbour not in link :
+							break
+					
+						if l2_neighbour not in link:
+							link.append(l2_neighbour)
+							print("-link.append(l2_neighbour:",l2_neighbour.pos)
+					print("link", link)
+					l2_neighbours = l2_neighbour.get_blocks_neighbours()
+					print("-l2_neighbours", l2_neighbours)
+		"""		
+				
+		
+		print("link:", self.links)
+		for link in self.links:
+			print("-- New Link ---")
+			for block in link:
+				print(block.pos)
+				
+		
+		
+
 class Road():
 	VERTICAL = 0
 	HORIZONTAL = 1
@@ -67,6 +136,7 @@ class Road():
 	TBL=8
 	TLR=9
 	BLR=10
+	START=11
 
 
 
@@ -75,42 +145,86 @@ class Block(pygame.sprite.Sprite):
 	"""
 	"""
 
-	UNKNOWN = 1
-	ROAD=2
-	START = 11
+	COLOR_UNKNOWN = 1
+	COLOR_ROAD=2
+	COLOR_START = 0
 
 	bounce = 24
 	SIZE = (25,25)
 	images = []
+
+
 	
-	def __init__(self,pos,block_type=UNKNOWN):
+	def __init__(self,pos,neighbours,block_color_type):
 		"""
 		Parameters
 		----------
 		pos: tuple(x,y)
 		"""
 		pygame.sprite.Sprite.__init__(self, self.containers)
-		self.block_type = block_type
+		self.neighbours=neighbours
+		
+		if block_color_type == Block.COLOR_START:
+			self.block_type=Road.START
+			
+		elif block_color_type == Block.COLOR_ROAD:
+			self.init_road_type(self.neighbours)
+	
+		else:
+			return
+
 		self.pos = pos
 		self.image = self.images[self.block_type]
 		val = (pos[0]*self.SIZE[0]+self.SIZE[0]/2,pos[1]*self.SIZE[1]+self.SIZE[0]/2)
 		self.rect = self.image.get_rect(center=(val))
 		self.reloading = 0
 		self.origtop = self.rect.top
-	
 
+	
+	def init_road_type(self,neighbours):
+		if (self.neighbours['RIGHT'] and neighbours['UP'] and neighbours['DOWN'] and neighbours['LEFT']):
+			self.block_type=Road.CROSS
+		elif (neighbours['RIGHT'] and neighbours['UP'] and neighbours['DOWN']):
+			self.block_type=Road.TBR
+		elif (neighbours['RIGHT'] and neighbours['UP'] and neighbours['LEFT']):
+			self.block_type=Road.TLR
+		elif (neighbours['LEFT'] and neighbours['UP'] and neighbours['DOWN']):
+			self.block_type=Road.TBL
+		elif (neighbours['RIGHT'] and neighbours['LEFT'] and neighbours['DOWN']):
+			self.block_type=Road.BLR
+		elif (neighbours['LEFT'] or neighbours['RIGHT']) and  ( not neighbours['UP'] and  not neighbours['DOWN']):
+			self.block_type=Road.HORIZONTAL
+		elif (neighbours['UP'] or neighbours['DOWN']) and  ( not neighbours['LEFT'] and  not neighbours['RIGHT']):
+			self.block_type=Road.VERTICAL
+		elif (neighbours['LEFT'] and  neighbours['DOWN']):
+			self.block_type=Road.BL
+		elif (neighbours['RIGHT'] and  neighbours['DOWN']):
+			self.block_type=Road.BR
+		elif (neighbours['LEFT'] and  neighbours['UP']):
+			self.block_type=Road.TL
+		elif (neighbours['RIGHT'] and  neighbours['UP']):
+			self.block_type=Road.TR
+		else:
+			self.block_type=Road.CROSS
+	
+	def get_blocks_neighbours(self):
+		result = dict()
+		for block in self.neighbours.values():
+			if type(block) is Block:
+				result[block.pos]=block
+		return result
 		
 	@staticmethod
-	def get_type(color):
+	def get_color_type(color):
 		level = 2
 		if color[0] < level and  color[1] < level and  color[2] < level:
-			return Block.ROAD
+			return Block.COLOR_ROAD
 		elif color[0] > 180  and color[1] < 50 and  color[2] < 50:
-			return Block.START
+			return Block.COLOR_START
 		elif color[0] > 250 and color[1] > 250 and color[2] > 250: # WHITE
 			return None
 		else:
-			return Block.UNKNOWN
+			return Block.COLOR_UNKNOWN
 		
 
 
@@ -124,7 +238,6 @@ class Player(pygame.sprite.Sprite):
 		#pos = (SCREENRECT.midbottom[X],SCREENRECT.midbottom[Y]-50)
 		
 		#pos.y = pos.y + self.image.eight
-		print('Debug a pos', pos)
 		val = (pos[X]*Block.SIZE[X]+Block.SIZE[X]/2,pos[Y]*Block.SIZE[Y]++Block.SIZE[Y]/2)
 		self.rect = self.image.get_rect(center=val)
 		self.reloading = 0
@@ -163,8 +276,8 @@ class Player(pygame.sprite.Sprite):
 def main(winstyle = 0):
 	# Initialize pygame
 	pygame.init()
-	
-	print('DEBUG 2', SCREENRECT.size)
+	t_map = Map()
+
 
 	# Set the display mode
 	winstyle = 0  # |FULLSCREEN
@@ -233,68 +346,40 @@ def main(winstyle = 0):
 	#Block(roads[0,0],Block.START) #note, this 'lives' because it goes into a sprite group7
 	
 	x_len,y_len,z_len = pixels.shape
-	print(x_len,y_len)
 	
 	starts=[]
 	for x in range(x_len):
 		for y in range(y_len):
 			color = pixels[x,y]
-			block_type = Block.get_type(color)
-			pos = (x,y) 
-			if block_type == Block.ROAD:
-				types={'UP':False,'DOWN':False ,'RIGHT':False ,'LEFT':False,'TR':False,'TL':False,'DR':False,'DL':False}
-				for x_neig in  range(x_len):
-					for y_neig in  range(y_len):
-						neig_color = pixels[x_neig,y_neig]
-						if Block.get_type(neig_color) == Block.ROAD:
-							if x_neig == x - 1:
-								if y_neig == y - 1 : types['TL'] = True
-								if y_neig == y + 1 : types['DL'] = True
-								if y_neig == y : types['LEFT'] = True
-							elif x_neig == x + 1:
-								if y_neig == y - 1 : types['TR'] = True
-								if y_neig == y + 1 : types['DR'] = True
-								if y_neig == y : types['RIGHT'] =True
-							elif x_neig == x :
-								if y_neig == y - 1 : types['UP'] = True
-								if y_neig == y + 1 : types['DOWN'] = True
-				if (types['RIGHT'] and types['UP'] and types['DOWN'] and types['LEFT']):
-					Block(pos,Road.CROSS)
-				#TBR=7 TBL=8 TLR=9 BLR=10
-				elif (types['RIGHT'] and types['UP'] and types['DOWN']):
-					Block(pos,Road.TBR)
-				elif (types['RIGHT'] and types['UP'] and types['LEFT']):
-					Block(pos,Road.TLR)
-				elif (types['LEFT'] and types['UP'] and types['DOWN']):
-					Block(pos,Road.TBL)
-				elif (types['RIGHT'] and types['LEFT'] and types['DOWN']):
-					Block(pos,Road.BLR)
-					
-				elif (types['LEFT'] or types['RIGHT']) and  ( not types['UP'] and  not types['DOWN']):
-					Block(pos,Road.HORIZONTAL)
-					
-				elif (types['UP'] or types['DOWN']) and  ( not types['LEFT'] and  not types['RIGHT']):
-					Block(pos,Road.VERTICAL)
-					
-				elif (types['LEFT'] and  types['DOWN']):
-					Block(pos,Road.BL)
-				elif (types['RIGHT'] and  types['DOWN']):
-					Block(pos,Road.BR)
-				elif (types['LEFT'] and  types['UP']):
-					Block(pos,Road.TL)
-				elif (types['RIGHT'] and  types['UP']):
-					Block(pos,Road.TR)
+			block_color_type = Block.get_color_type(color)
+			pos = (x,y)
+			blk=None
+			if block_color_type == Block.COLOR_ROAD or block_color_type == Block.COLOR_START:
+				neighbours={'UP':False,'DOWN':False ,'RIGHT':False ,'LEFT':False,'TR':False,'TL':False,'DR':False,'DL':False}
+				if Block.get_color_type(pixels[x,y-1]) == Block.COLOR_ROAD:neighbours['UP']=True
+				if Block.get_color_type(pixels[x,y+1]) == Block.COLOR_ROAD:neighbours['DOWN']=True
+				if Block.get_color_type(pixels[x+1,y]) == Block.COLOR_ROAD:neighbours['RIGHT']=True
+				if Block.get_color_type(pixels[x-1,y]) == Block.COLOR_ROAD:neighbours['LEFT']=True
+				if Block.get_color_type(pixels[x+1,y+1]) == Block.COLOR_ROAD:neighbours['DR']=True
+				if Block.get_color_type(pixels[x-1,y+1]) == Block.COLOR_ROAD:neighbours['DL']=True
+				if Block.get_color_type(pixels[x+1,y-1]) == Block.COLOR_ROAD:neighbours['TR']=True
+				if Block.get_color_type(pixels[x-1,y-1]) == Block.COLOR_ROAD:neighbours['TL']=True
+				blk=Block(pos,neighbours,block_color_type)
 				
-			if  block_type == Block.START:
+			if  block_color_type == Block.COLOR_START:
+				blk=Block(pos,neighbours,block_color_type)
+				starts.append(blk)
 				
-				starts.append(Block(pos,Block.START))
-					
-			elif  block_type == Block.UNKNOWN:
-				Block(pos,Block.UNKNOW)
+			elif  block_color_type == Block.COLOR_UNKNOWN:
+				blk=Block(pos,neighbours,block_color_type)
+			if blk != None : t_map.blocks[(x,y)]=blk
 				
+	t_map.init_roads()
 	#initialize our starting sprites
-	pos = starts[0].pos
+	pos=starts[0].pos
 	player = Player(pos)
+	
+	piste=list()
 	
 	
 	#allgroup.change_layer(player,0)
@@ -310,7 +395,7 @@ def main(winstyle = 0):
 		# clear/erase the last drawn sprites
 		all.clear(screen, background)
 
-		#update all the sprites
+		#update all the sprites1
 		all.update()
 		#handle player input
 		"""
