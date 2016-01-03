@@ -63,26 +63,35 @@ def getPixelArray(filename):
 # update, since it is passed extra information about
 # the keyboard
 
+class Road():
+	VERTICAL = 0
+	HORIZONTAL = 1
+	BR = 2
+	BL = 3
+	TL = 4
+	TR = 5
+	CROSS =6
+	TBR=7
+	TBL=8
+	TLR=9
+	BLR=10
 
 
+
+#Block.images = [ver,hor,br,bl,tl,tr,cross,tbr,tbl,tlr,blr,start,un]
 class Block(pygame.sprite.Sprite):
 	"""
 	"""
-	VERTICAL = 0
-	HORIZONTAL = 1
-	START = 2
-	BR = 3
-	BL = 4
-	TL = 5
-	TR = 6
-	UNKNOWN = 7
-	VERTICAL = 8
+
+	UNKNOWN = 1
+	ROAD=2
+	START = 11
 
 	bounce = 24
 	SIZE = (25,25)
 	images = []
 	
-	def __init__(self,pos,block_type=VERTICAL):
+	def __init__(self,pos,block_type=UNKNOWN):
 		"""
 		Parameters
 		----------
@@ -92,7 +101,6 @@ class Block(pygame.sprite.Sprite):
 		self.block_type = block_type
 		self.pos = pos
 		self.image = self.images[self.block_type]
-		print('new block pos:',pos)
 		val = (pos[0]*self.SIZE[0]+self.SIZE[0]/2,pos[1]*self.SIZE[1]+self.SIZE[0]/2)
 		self.rect = self.image.get_rect(center=(val))
 		self.reloading = 0
@@ -112,27 +120,21 @@ class Block(pygame.sprite.Sprite):
 		else:
 			return Block.UNKNOWN
 		
-	@staticmethod
-	def is_a_road(block_type):
-		if block_type == Block.VERTICAL or block_type == Block.HORIZONTAL or  \
-			block_type == Block.START or block_type == Block.BR or \
-			block_type == Block.BL or block_type == Block.TL or block_type == Block.TR:
-			return True
-		return False
 
 
 class Player(pygame.sprite.Sprite):
 	speed = 10
 	bounce = 24
 	images = []
-	def __init__(self):
+	def __init__(self,pos):
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		self.image = self.images[0]
 		#pos = (SCREENRECT.midbottom[X],SCREENRECT.midbottom[Y]-50)
 		
 		#pos.y = pos.y + self.image.eight
 		#print('pos', pos)
-		self.rect = self.image.get_rect(center=SCREENRECT.topleft)
+		val = (pos[X]*Block.SIZE[X],pos[Y]*Block.SIZE[Y])
+		self.rect = self.image.get_rect(center=val)
 		self.reloading = 0
 		self.origtop = self.rect.top
 
@@ -193,15 +195,19 @@ def main(winstyle = 0):
 
 	
 	hor = load_image('road_hor.jpg')
-	ver = load_image('one.jpg')
+	ver = load_image('road_ver.jpg')
 	br = load_image('road_bottom_right.jpg')
 	bl = load_image('road_bottom_left.jpg')
 	tl = load_image('road_top_left.jpg')
 	tr = load_image('road_top_right.jpg')
-	
-	start = load_image('one.tif')
+	cross = load_image('road_cross.jpg')
+	tbr = load_image('road_top_bottom_right.jpg')
+	tbl = load_image('road_top_bottom_left.jpg')
+	tlr = load_image('road_top_left_right.jpg')
+	blr = load_image('road_bottom_left_right.jpg')	
+	start = load_image('road_start.jpg')
 	un = load_image('unknow.tif')
-	Block.images = [ver,hor,start,br,bl,tl,tr,un]
+	Block.images = [ver,hor,br,bl,tl,tr,cross,tbr,tbl,tlr,blr,start,un]
 	
 	#decorate the game window
 	pygame.display.set_caption('Pygame Aliens')
@@ -243,19 +249,18 @@ def main(winstyle = 0):
 	x_len,y_len,z_len = pixels.shape
 	print(x_len,y_len)
 	
+	starts=[]
 	for x in range(x_len):
 		for y in range(y_len):
 			color = pixels[x,y]
 			block_type = Block.get_type(color)
 			pos = (x,y) 
-			if block_type = Block.ROAD:
-				types=dict()
+			if block_type == Block.ROAD:
+				types={'UP':False,'DOWN':False ,'RIGHT':False ,'LEFT':False,'TR':False,'TL':False,'DR':False,'DL':False}
 				for x_neig in  range(x_len):
 					for y_neig in  range(y_len):
 						neig_color = pixels[x_neig,y_neig]
-						if Block.is_a_road(Block.get_type(neig_color)):
-						
-							#types[UP,DOWN,RIGHT,LEFT,TR,TL,DR,DL
+						if Block.get_type(neig_color) == Block.ROAD:
 							if x_neig == x - 1:
 								if y_neig == y - 1 : types['TL'] = True
 								if y_neig == y + 1 : types['DL'] = True
@@ -267,20 +272,43 @@ def main(winstyle = 0):
 							elif x_neig == x :
 								if y_neig == y - 1 : types['UP'] = True
 								if y_neig == y + 1 : types['DOWN'] = True
-				print("types:", types)
-				if types['LEFT'] and  types['RIGHT'] :
-					Block(pos,Block.HORIZONTAL)
-				elif types['UP'] and  types['DOWN'] 
-					Block(pos,Block.VERTICAL)
-				elif  road_type == Block.START:
-					Block(pos,Block.START)
-				elif  road_type == Block.UNKNOWN:
-					Block(pos,Block.UNKNOW)
-				else:
-					print (color)
+				if (types['RIGHT'] and types['UP'] and types['DOWN'] and types['LEFT']):
+					Block(pos,Road.CROSS)
+				#TBR=7 TBL=8 TLR=9 BLR=10
+				elif (types['RIGHT'] and types['UP'] and types['DOWN']):
+					Block(pos,Road.TBR)
+				elif (types['RIGHT'] and types['UP'] and types['LEFT']):
+					Block(pos,Road.TLR)
+				elif (types['LEFT'] and types['UP'] and types['DOWN']):
+					Block(pos,Road.TBL)
+				elif (types['RIGHT'] and types['LEFT'] and types['DOWN']):
+					Block(pos,Road.BLR)
+					
+				elif (types['LEFT'] or types['RIGHT']) and  ( not types['UP'] and  not types['DOWN']):
+					Block(pos,Road.HORIZONTAL)
+					
+				elif (types['UP'] or types['DOWN']) and  ( not types['LEFT'] and  not types['RIGHT']):
+					Block(pos,Road.VERTICAL)
+					
+				elif (types['LEFT'] and  types['DOWN']):
+					Block(pos,Road.BL)
+				elif (types['RIGHT'] and  types['DOWN']):
+					Block(pos,Road.BR)
+				elif (types['LEFT'] and  types['UP']):
+					Block(pos,Road.TL)
+				elif (types['RIGHT'] and  types['UP']):
+					Block(pos,Road.TR)
+				
+			if  block_type == Block.START:
+				
+				starts.append(Block(pos,Block.START))
+					
+			elif  block_type == Block.UNKNOWN:
+				Block(pos,Block.UNKNOW)
 				
 	#initialize our starting sprites
-	player = Player()
+	pos = starts[0].pos
+	player = Player(pos)
 	
 	
 	#allgroup.change_layer(player,0)
@@ -310,7 +338,7 @@ def main(winstyle = 0):
 		pygame.display.update(dirty)
 
 		#cap the framerate
-		clock.tick(100)
+		clock.tick(40)
 
 	pygame.time.wait(1000)
 	pygame.quit()
