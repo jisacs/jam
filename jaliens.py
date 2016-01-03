@@ -240,11 +240,7 @@ def main(winstyle = 0):
 				pass
 			
 			elif road_type == Block.HORIZONTAL:
-				tmp = Block(pos,Block.HORIZONTAL)
-				blocks_hit_list = pygame.sprite.spritecollide(tmp, blocks, False)
-				if len(blocks_hit_list) > 1:
-					blocks.remove(tmp)
-					del(tmp)
+				Block(pos,Block.HORIZONTAL)
 			elif road_type == Block.VERTICAL:
 				Block(pos,Block.VERTICAL)
 			elif  road_type == Block.START:
