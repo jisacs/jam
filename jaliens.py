@@ -53,77 +53,90 @@ def getPixelArray(filename):
 # update, since it is passed extra information about
 # the keyboard
 
+class Link():
+	def __init__(self,start=None,end=None):
+		self.start=start
+		self.end=end
+		self.roads=list()
+		
+	def append(self,road):
+		self.roads.append(road)
+		
+	def has(self,road):
+		#print("DEBUG HAS SEARCH -> Link has: road:", road.pos)
+		for exising_road in self.roads:
+			if exising_road.pos == road.pos or \
+			   road.pos == self.start.pos:
+				print("DEBUG HAS ", road.pos,  "return True")
+				return True
+		print("DEBUG HAS", road.pos , " return False")
+		return False
+	
+	def get_neighbours_remaining(self,road):
+		result=list()
+		neighbours = road.get_roads_neighbours()
+		for neighbour in neighbours.values():
+			if not self.has(neighbour): 
+				   result.append(neighbour) 
+		return result
+		
 class Map():
 	def __init__(self):
-		self.blocks=dict() # key (x,y) value = Blaock reference
+		self.roads=dict() # key (x,y) value = Road reference
 		self.starts=dict()
 		self.links=list()
 		
-	def init_roads(self):
-		for block in self.blocks.values():
-			if block.road_type==Road.START:
-				self.starts[(block.pos[X],block.pos[Y])] = block
+	def set_roads_neighbour_instance(self):
+		for road in self.roads.values():
+			if road.road_type==Road.START:
+				self.starts[(road.pos[X],road.pos[Y])] = road
 				
-			if (block.pos[X],block.pos[Y]-1)  in self.blocks.keys():
-				block.neighbours["UP"] = self.blocks[(block.pos[X],block.pos[Y]-1)]
+			if (road.pos[X],road.pos[Y]-1)  in self.roads.keys():
+				road.neighbours["UP"] = self.roads[(road.pos[X],road.pos[Y]-1)]
 			
-			if (block.pos[X],block.pos[Y]+1)  in self.blocks.keys():
-				block.neighbours["DOWN"] = self.blocks[(block.pos[X],block.pos[Y]+1)]
+			if (road.pos[X],road.pos[Y]+1)  in self.roads.keys():
+				road.neighbours["DOWN"] = self.roads[(road.pos[X],road.pos[Y]+1)]
 			
-			if (block.pos[X]-1,block.pos[Y])  in self.blocks.keys():
-				block.neighbours["LEFT"] = self.blocks[(block.pos[X]-1,block.pos[Y])]
+			if (road.pos[X]-1,road.pos[Y])  in self.roads.keys():
+				road.neighbours["LEFT"] = self.roads[(road.pos[X]-1,road.pos[Y])]
 			
-			if (block.pos[X]+1,block.pos[Y])  in self.blocks.keys():
-				block.neighbours["RIGHT"] = self.blocks[(block.pos[X]+1,block.pos[Y])]
+			if (road.pos[X]+1,road.pos[Y])  in self.roads.keys():
+				road.neighbours["RIGHT"] = self.roads[(road.pos[X]+1,road.pos[Y])]
 
-			if (block.pos[X]-1,block.pos[Y]-1)  in self.blocks.keys():
-				block.neighbours["TL"] = self.blocks[(block.pos[X]-1,block.pos[Y]-1)]
 			
-			if (block.pos[X]+1,block.pos[Y]-1)  in self.blocks.keys():
-				block.neighbours["TR"] = self.blocks[(block.pos[X]+1,block.pos[Y]-1)]
-			
-			if (block.pos[X]-1,block.pos[Y]+1)  in self.blocks.keys():
-				block.neighbours["DL"] = self.blocks[(block.pos[X]-1,block.pos[Y]+1)]
-			
-			if (block.pos[X]+1,block.pos[Y]+1)  in self.blocks.keys():
-				block.neighbours["DR"] = self.blocks[(block.pos[X]+1,block.pos[Y]+1)]
+
+	def computeLinks(self):
+		self.set_roads_neighbour_instance()
 		
-		"""
+		
 		for start in self.starts.values():
-			print("---------start:", start.pos)
-			start_neighbours = start.get_blocks_neighbours()
-			print("-----start_neighbours:", start_neighbours)
-			for current in start_neighbours.values():
-				print("---current:", current.pos)
-				l2_neighbours = current.get_blocks_neighbours() 
-				print("---l2_neighbours", l2_neighbours)
-				while len(l2_neighbours) >= 2:
-					link=list()
-					if current not in link:
-						link.append(current)
-						print("-New list append current:", current.pos)
-					for l2_neighbour in l2_neighbours.values():
-						if l2_neighbour.block_type != Road.START and l2_neighbour not in link :
-							break
+			link = Link(start=start)
+			print("1/---------start:", start.pos)
+			current_road = start
+			stop=False
+			while stop == False:
+				for next_road in current_road.get_roads_neighbours().values():
+					print("---next_road:", next_road.pos)
+					if not link.has( next_road):
+						link.append(next_road)
+						print("--- append current_road to link:", next_road.pos)
+						current_road=next_road
+						print("---  set current_road to", current_road.pos)
+						print("---   current_road get_neighbours_remaining", len(link.get_neighbours_remaining(current_road)))
+						if len(link.get_neighbours_remaining(current_road)) <= 0:
+							print("--- stop = True")
+							stop = True
+						
+			self.links.append(link)
 					
-						if l2_neighbour not in link:
-							link.append(l2_neighbour)
-							print("-link.append(l2_neighbour:",l2_neighbour.pos)
-					print("link", link)
-					l2_neighbours = l2_neighbour.get_blocks_neighbours()
-					print("-l2_neighbours", l2_neighbours)
-		"""		
-				
 		
-		print("link:", self.links)
+		
 		for link in self.links:
-			print("-- New Link ---")
-			for block in link:
+			print("-- New Link ---",link.start.pos,link.roads)
+			for block in link.roads:
 				print(block.pos)
-				
-		
-		
-
+						
+	
 
 #Block.images = [ver,hor,br,bl,tl,tr,cross,tbr,tbl,tlr,blr,start,un]
 class Block(pygame.sprite.Sprite):
@@ -150,14 +163,7 @@ class Block(pygame.sprite.Sprite):
 		self.reloading = 0
 		self.origtop = self.rect.top
 		
-		
-		
-	def get_blocks_neighbours(self):
-		result = dict()
-		for block in self.neighbours.values():
-			if type(block) is Block:
-				result[block.pos]=block
-		return result
+
 		
 	@staticmethod
 	def get_color_type(color):
@@ -229,7 +235,14 @@ class Road(Block):
 			self.image=load_image('road_top_right.jpg')
 		else:
 			print("set_road_type: unknow type")
-			
+		
+		
+	def get_roads_neighbours(self):
+		result = dict()
+		for block in self.neighbours.values():
+			if type(block) is Road:
+				result[block.pos]=block
+		return result
 
 
 
@@ -241,14 +254,13 @@ class Player(pygame.sprite.Sprite):
 	def __init__(self,pos):
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		self.image = self.images[0]
-		print('Block.SIZE[X]', Block.SIZE[X], 'Block.SIZE[Y]', Block.SIZE[Y])
-		val = (pos[X]*Block.SIZE[X]+Block.SIZE[X]/2,pos[Y]*Block.SIZE[Y]++Block.SIZE[Y]/2)
-		print('val', val)
+		self.pos=pos
+		val = (pos[X]*Block.SIZE[X]+Block.SIZE[X]/2,pos[Y]*Block.SIZE[Y]+Block.SIZE[Y]/2)
 		self.rect = self.image.get_rect(center=val)
 		self.reloading = 0
 		self.origtop = self.rect.top
 		self.direction=(0,0)
-		self.pos=pos
+
 	
 
 	def move(self, keystate,blocks):
@@ -335,7 +347,7 @@ def main(winstyle = 0):
 	
 	x_len,y_len,z_len = pixels.shape
 	
-	starts=[]
+	start = None
 	for x in range(x_len):
 		for y in range(y_len):
 			color = pixels[x,y]
@@ -343,29 +355,25 @@ def main(winstyle = 0):
 			pos = (x,y)
 			blk=None
 			if block_color_type == Block.COLOR_ROAD or block_color_type == Block.COLOR_START:
-				neighbours={'UP':False,'DOWN':False ,'RIGHT':False ,'LEFT':False,'TR':False,'TL':False,'DR':False,'DL':False}
+				neighbours={'UP':False,'DOWN':False ,'RIGHT':False ,'LEFT':False}
 				if Block.get_color_type(pixels[x,y-1]) == Block.COLOR_ROAD:neighbours['UP']=True
 				if Block.get_color_type(pixels[x,y+1]) == Block.COLOR_ROAD:neighbours['DOWN']=True
 				if Block.get_color_type(pixels[x+1,y]) == Block.COLOR_ROAD:neighbours['RIGHT']=True
 				if Block.get_color_type(pixels[x-1,y]) == Block.COLOR_ROAD:neighbours['LEFT']=True
-				if Block.get_color_type(pixels[x+1,y+1]) == Block.COLOR_ROAD:neighbours['DR']=True
-				if Block.get_color_type(pixels[x-1,y+1]) == Block.COLOR_ROAD:neighbours['DL']=True
-				if Block.get_color_type(pixels[x+1,y-1]) == Block.COLOR_ROAD:neighbours['TR']=True
-				if Block.get_color_type(pixels[x-1,y-1]) == Block.COLOR_ROAD:neighbours['TL']=True
 				blk=Road(pos,neighbours,block_color_type)
 				
 			if  block_color_type == Block.COLOR_START:
 				blk=Road(pos,neighbours,block_color_type)
-				starts.append(blk)
+				if start == None : start = blk
 				
 			elif  block_color_type == Block.COLOR_UNKNOWN:
 				blk=Block(pos,neighbours,block_color_type)
-			if blk != None : t_map.blocks[(x,y)]=blk
 				
-	t_map.init_roads()
+			if type(blk) is Road :  t_map.roads[(x,y)]=blk
+				
+	t_map.computeLinks()
 	#initialize our starting sprites
-	pos=starts[0].pos
-	player = Player(pos)
+	player = Player(start.pos)
 	
 	piste=list()
 	
