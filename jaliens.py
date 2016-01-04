@@ -104,36 +104,34 @@ class Map():
 
 	def computeLinks(self):
 		self.set_roads_neighbour_instance()
-		
-		
 		for start in self.starts.values():
-			link = Link(start=start)
-			current_road = start
-			stop=False
-			while stop == False:
-				for next_road in current_road.get_roads_neighbours().values():
-					if not link.has( next_road):
-						if next_road.road_type==Road.START: # Find the END
-							link.end=next_road
-							stop = True
-							break
-						link.append(next_road)
-						current_road=next_road
-						if len(link.get_neighbours_remaining(current_road)) <= 0 :
-							stop = True
-							link = None
-						
-			if link != None:
-				print("DEBUG Append a list")
-				self.links.append(link)
-					
+			for start_neigs in start.get_roads_neighbours().values():
+				link = Link(start=start)
+				current_road = start_neigs
+				link.append(current_road)
+				stop=False
+				while stop == False:
+					for next_road in current_road.get_roads_neighbours().values():
+						if not link.has( next_road):
+							if next_road.road_type==Road.START: # Find the END
+								link.end=next_road
+								stop = True
+							else:
+								link.append(next_road)
+								current_road=next_road
+								if len(link.get_neighbours_remaining(current_road)) <= 0 :
+									stop = True
+									link = None
+				if link != None:
+					self.links.append(link)
 		
-		
+		print("Map:computeLinks find ",len(self.links)," links")
 		for link in self.links:
-			print("-- START Link ---",link.start.pos)
+			print(link.start.pos,link.end.pos)
 			for block in link.roads:
-				print(block.pos)
-			print("-- END Link ---",link.end.pos)
+				print(block.pos,end='')
+			print("\n")
+
 
 
 #Block.images = [ver,hor,br,bl,tl,tr,cross,tbr,tbl,tlr,blr,start,un]
@@ -232,7 +230,9 @@ class Road(Block):
 			self.road_type=Road.TR
 			self.image=load_image('road_top_right.jpg')
 		else:
-			print("set_road_type: unknow type")
+			print("set_road_type: unknow type set CROSS")
+			self.road_type=Road.CROSS
+			self.image=load_image('road_cross.jpg')
 		
 		
 	def get_roads_neighbours(self):
