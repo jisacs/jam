@@ -123,7 +123,8 @@ class Map():
 						current_road=next_road
 						print("---  set current_road to", current_road.pos)
 						print("---   current_road get_neighbours_remaining", len(link.get_neighbours_remaining(current_road)))
-						if len(link.get_neighbours_remaining(current_road)) <= 0:
+						if len(link.get_neighbours_remaining(current_road)) <= 0 or\
+							current_road.road_type==Road.START:
 							print("--- stop = True")
 							stop = True
 						
