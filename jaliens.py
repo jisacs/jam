@@ -61,7 +61,7 @@ class Map():
 		
 	def init_roads(self):
 		for block in self.blocks.values():
-			if block.block_type==Road.START:
+			if block.road_type==Road.START:
 				self.starts[(block.pos[X],block.pos[Y])] = block
 				
 			if (block.pos[X],block.pos[Y]-1)  in self.blocks.keys():
@@ -124,35 +124,15 @@ class Map():
 		
 		
 
-class Road():
-	VERTICAL = 0
-	HORIZONTAL = 1
-	BR = 2
-	BL = 3
-	TL = 4
-	TR = 5
-	CROSS =6
-	TBR=7
-	TBL=8
-	TLR=9
-	BLR=10
-	START=11
-
-
 
 #Block.images = [ver,hor,br,bl,tl,tr,cross,tbr,tbl,tlr,blr,start,un]
 class Block(pygame.sprite.Sprite):
 	"""
 	"""
-
+	COLOR_START   = 0
 	COLOR_UNKNOWN = 1
-	COLOR_ROAD=2
-	COLOR_START = 0
-
-	bounce = 24
+	COLOR_ROAD    = 2
 	SIZE = (25,25)
-	images = []
-
 
 	
 	def __init__(self,pos,neighbours,block_color_type):
@@ -163,50 +143,15 @@ class Block(pygame.sprite.Sprite):
 		"""
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		self.neighbours=neighbours
-		
-		if block_color_type == Block.COLOR_START:
-			self.block_type=Road.START
-			
-		elif block_color_type == Block.COLOR_ROAD:
-			self.init_road_type(self.neighbours)
-	
-		else:
-			return
-
 		self.pos = pos
-		self.image = self.images[self.block_type]
+		self.image = load_image("unknow.tif")
 		val = (pos[0]*self.SIZE[0]+self.SIZE[0]/2,pos[1]*self.SIZE[1]+self.SIZE[0]/2)
 		self.rect = self.image.get_rect(center=(val))
 		self.reloading = 0
 		self.origtop = self.rect.top
-
-	
-	def init_road_type(self,neighbours):
-		if (self.neighbours['RIGHT'] and neighbours['UP'] and neighbours['DOWN'] and neighbours['LEFT']):
-			self.block_type=Road.CROSS
-		elif (neighbours['RIGHT'] and neighbours['UP'] and neighbours['DOWN']):
-			self.block_type=Road.TBR
-		elif (neighbours['RIGHT'] and neighbours['UP'] and neighbours['LEFT']):
-			self.block_type=Road.TLR
-		elif (neighbours['LEFT'] and neighbours['UP'] and neighbours['DOWN']):
-			self.block_type=Road.TBL
-		elif (neighbours['RIGHT'] and neighbours['LEFT'] and neighbours['DOWN']):
-			self.block_type=Road.BLR
-		elif (neighbours['LEFT'] or neighbours['RIGHT']) and  ( not neighbours['UP'] and  not neighbours['DOWN']):
-			self.block_type=Road.HORIZONTAL
-		elif (neighbours['UP'] or neighbours['DOWN']) and  ( not neighbours['LEFT'] and  not neighbours['RIGHT']):
-			self.block_type=Road.VERTICAL
-		elif (neighbours['LEFT'] and  neighbours['DOWN']):
-			self.block_type=Road.BL
-		elif (neighbours['RIGHT'] and  neighbours['DOWN']):
-			self.block_type=Road.BR
-		elif (neighbours['LEFT'] and  neighbours['UP']):
-			self.block_type=Road.TL
-		elif (neighbours['RIGHT'] and  neighbours['UP']):
-			self.block_type=Road.TR
-		else:
-			self.block_type=Road.CROSS
-	
+		
+		
+		
 	def get_blocks_neighbours(self):
 		result = dict()
 		for block in self.neighbours.values():
@@ -227,6 +172,67 @@ class Block(pygame.sprite.Sprite):
 			return Block.COLOR_UNKNOWN
 		
 
+class Road(Block):
+	VERTICAL = 0
+	HORIZONTAL = 1
+	BR = 2
+	BL = 3
+	TL = 4
+	TR = 5
+	CROSS =6
+	TBR=7
+	TBL=8
+	TLR=9
+	BLR=10
+	START=11
+	
+	def __init__(self,pos,neighbours,block_color_type):
+		Block.__init__(self,pos,neighbours,block_color_type)
+		if block_color_type == Block.COLOR_START :
+			self.road_type = self.START
+			self.image=load_image('road_start.jpg')
+		elif block_color_type == Block.COLOR_ROAD : self.set_road_type(neighbours)
+
+	def set_road_type(self,neighbours):
+		if (self.neighbours['RIGHT'] and neighbours['UP'] and neighbours['DOWN'] and neighbours['LEFT']):
+			self.road_type=Road.CROSS
+			self.image=load_image('road_cross.jpg')
+		elif (neighbours['RIGHT'] and neighbours['UP'] and neighbours['DOWN']):
+			self.road_type=Road.TBR
+			self.image=load_image('road_top_bottom_right.jpg')
+		elif (neighbours['RIGHT'] and neighbours['UP'] and neighbours['LEFT']):
+			self.road_type=Road.TLR
+			self.image=load_image('road_top_left_right.jpg')
+		elif (neighbours['LEFT'] and neighbours['UP'] and neighbours['DOWN']):
+			self.road_type=Road.TBL
+			self.image=load_image('road_top_bottom_left.jpg')
+		elif (neighbours['RIGHT'] and neighbours['LEFT'] and neighbours['DOWN']):
+			self.road_type=Road.BLR
+			self.image=load_image('road_bottom_left_right.jpg')
+		elif (neighbours['LEFT'] or neighbours['RIGHT']) and  ( not neighbours['UP'] and  not neighbours['DOWN']):
+			self.road_type=Road.HORIZONTAL
+			self.image=load_image('road_hor.jpg')
+		elif (neighbours['UP'] or neighbours['DOWN']) and  ( not neighbours['LEFT'] and  not neighbours['RIGHT']):
+			self.road_type=Road.VERTICAL
+			self.image=load_image('road_ver.jpg')
+		elif (neighbours['LEFT'] and  neighbours['DOWN']):
+			self.road_type=Road.BL
+			self.image=load_image('road_bottom_left.jpg')
+		elif (neighbours['RIGHT'] and  neighbours['DOWN']):
+			self.road_type=Road.BR
+			self.image=load_image('road_bottom_right.jpg')
+		elif (neighbours['LEFT'] and  neighbours['UP']):
+			self.road_type=Road.TL
+			self.image=load_image('road_top_left.jpg')
+		elif (neighbours['RIGHT'] and  neighbours['UP']):
+			self.road_type=Road.TR
+			self.image=load_image('road_top_right.jpg')
+		else:
+			print("set_road_type: unknow type")
+			
+
+
+
 
 class Player(pygame.sprite.Sprite):
 	size = 10
@@ -235,15 +241,13 @@ class Player(pygame.sprite.Sprite):
 	def __init__(self,pos):
 		pygame.sprite.Sprite.__init__(self, self.containers)
 		self.image = self.images[0]
-		#pos = (SCREENRECT.midbottom[X],SCREENRECT.midbottom[Y]-50)
-		
-		#pos.y = pos.y + self.image.eight
+		print('Block.SIZE[X]', Block.SIZE[X], 'Block.SIZE[Y]', Block.SIZE[Y])
 		val = (pos[X]*Block.SIZE[X]+Block.SIZE[X]/2,pos[Y]*Block.SIZE[Y]++Block.SIZE[Y]/2)
+		print('val', val)
 		self.rect = self.image.get_rect(center=val)
 		self.reloading = 0
 		self.origtop = self.rect.top
 		self.direction=(0,0)
-		self.offset=[0,0]
 		self.pos=pos
 	
 
@@ -291,22 +295,6 @@ def main(winstyle = 0):
 	right = load_image('carright.jpg')
 	left = load_image('carleft.jpg')
 	Player.images = [up,down,right,left]
-
-	
-	hor = load_image('road_hor.jpg')
-	ver = load_image('road_ver.jpg')
-	br = load_image('road_bottom_right.jpg')
-	bl = load_image('road_bottom_left.jpg')
-	tl = load_image('road_top_left.jpg')
-	tr = load_image('road_top_right.jpg')
-	cross = load_image('road_cross.jpg')
-	tbr = load_image('road_top_bottom_right.jpg')
-	tbl = load_image('road_top_bottom_left.jpg')
-	tlr = load_image('road_top_left_right.jpg')
-	blr = load_image('road_bottom_left_right.jpg')	
-	start = load_image('road_start.jpg')
-	un = load_image('unknow.tif')
-	Block.images = [ver,hor,br,bl,tl,tr,cross,tbr,tbl,tlr,blr,start,un]
 	
 	#decorate the game window
 	pygame.display.set_caption('Pygame Aliens')
@@ -364,10 +352,10 @@ def main(winstyle = 0):
 				if Block.get_color_type(pixels[x-1,y+1]) == Block.COLOR_ROAD:neighbours['DL']=True
 				if Block.get_color_type(pixels[x+1,y-1]) == Block.COLOR_ROAD:neighbours['TR']=True
 				if Block.get_color_type(pixels[x-1,y-1]) == Block.COLOR_ROAD:neighbours['TL']=True
-				blk=Block(pos,neighbours,block_color_type)
+				blk=Road(pos,neighbours,block_color_type)
 				
 			if  block_color_type == Block.COLOR_START:
-				blk=Block(pos,neighbours,block_color_type)
+				blk=Road(pos,neighbours,block_color_type)
 				starts.append(blk)
 				
 			elif  block_color_type == Block.COLOR_UNKNOWN:
