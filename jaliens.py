@@ -63,13 +63,10 @@ class Link():
 		self.roads.append(road)
 		
 	def has(self,road):
-		#print("DEBUG HAS SEARCH -> Link has: road:", road.pos)
 		for exising_road in self.roads:
 			if exising_road.pos == road.pos or \
 			   road.pos == self.start.pos:
-				print("DEBUG HAS ", road.pos,  "return True")
 				return True
-		print("DEBUG HAS", road.pos , " return False")
 		return False
 	
 	def get_neighbours_remaining(self,road):
@@ -111,33 +108,33 @@ class Map():
 		
 		for start in self.starts.values():
 			link = Link(start=start)
-			print("1/---------start:", start.pos)
 			current_road = start
 			stop=False
 			while stop == False:
 				for next_road in current_road.get_roads_neighbours().values():
-					print("---next_road:", next_road.pos)
 					if not link.has( next_road):
-						link.append(next_road)
-						print("--- append current_road to link:", next_road.pos)
-						current_road=next_road
-						print("---  set current_road to", current_road.pos)
-						print("---   current_road get_neighbours_remaining", len(link.get_neighbours_remaining(current_road)))
-						if len(link.get_neighbours_remaining(current_road)) <= 0 or\
-							current_road.road_type==Road.START:
-							print("--- stop = True")
+						if next_road.road_type==Road.START: # Find the END
+							link.end=next_road
 							stop = True
+							break
+						link.append(next_road)
+						current_road=next_road
+						if len(link.get_neighbours_remaining(current_road)) <= 0 :
+							stop = True
+							link = None
 						
-			self.links.append(link)
+			if link != None:
+				print("DEBUG Append a list")
+				self.links.append(link)
 					
 		
 		
 		for link in self.links:
-			print("-- New Link ---",link.start.pos,link.roads)
+			print("-- START Link ---",link.start.pos)
 			for block in link.roads:
 				print(block.pos)
-						
-	
+			print("-- END Link ---",link.end.pos)
+
 
 #Block.images = [ver,hor,br,bl,tl,tr,cross,tbr,tbl,tlr,blr,start,un]
 class Block(pygame.sprite.Sprite):
