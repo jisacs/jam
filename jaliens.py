@@ -358,7 +358,7 @@ def main(winstyle = 0):
 	#create the background, tile the bgd image
 	"""
 	
-	bgdtile = load_image('white_map.jpg')
+	bgdtile = load_image('fond_sillingy.tif')
 	background = pygame.Surface(SCREENRECT.size)
 	for x in range(0, SCREENRECT.width, bgdtile.get_width()):
 		for y in range(0, SCREENRECT.width, bgdtile.get_height()):
