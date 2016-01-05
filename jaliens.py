@@ -76,6 +76,47 @@ class Link():
 			if not self.has(neighbour): 
 				   result.append(neighbour) 
 		return result
+	
+	def clean(self):
+		"""
+		suppime les morceaux de route en cul de sac
+		"""
+		
+		stop = False
+		while(stop == False):
+			print("---- clean list")
+			for road in self.roads:
+				print (road.pos, end='')
+			print()
+			to_remove = list()
+			if len(self.roads) == 0 : return
+			last = self.start
+			
+			counter = 0
+			for road in self.roads[:]:
+				counter+=1
+				print("last: ", last.pos, "road: ", road.pos)
+				if abs(road.pos[X] - last.pos[X]) > 1 or abs(road.pos[Y] - last.pos[Y]) > 1 or \
+					 (road.pos[X] != last.pos[X] and road.pos[Y] != last.pos[Y]) :
+					to_remove.append(last)
+					new_list = [item for item in self.roads if item not in to_remove]
+					self.roads = new_list
+					print("break after having removed:", to_remove[0].pos )
+					break
+				else:
+					last = road
+					
+			if counter == len(self.roads):
+				print("stop = true")
+				stop = True
+
+			
+		
+		print("---- STOP clean list")
+		for road in self.roads:
+			print (road.pos, end='')
+		print()
+		
 		
 class Map():
 	def __init__(self):
@@ -106,31 +147,31 @@ class Map():
 		self.set_roads_neighbour_instance()
 		
 		for start in self.starts.values():
-			print("start", start.pos)
+			#print("start", start.pos)
 			for start_neigs in start.get_roads_neighbours().values():
 				link = Link(start=start)
 				current_road = start_neigs
-				print("append", current_road.pos)
+				#print("append", current_road.pos)
 				link.append(current_road)
 				stop=False
 				counter=30
 				crossroads = list()
 				while stop == False:# and counter >= 0:
 					counter-=1
-					print("current road", current_road.pos)
+					#print("current road", current_road.pos)
 					for next_road in current_road.get_roads_neighbours().values():
-						print("next_road", next_road.pos,"remaining neighbours: ", len(link.get_neighbours_remaining(next_road)))
+						#print("next_road", next_road.pos,"remaining neighbours: ", len(link.get_neighbours_remaining(next_road)))
 						if len(link.get_neighbours_remaining(next_road)) > 1:
 							crossroads.append(next_road)
-							print("---- Add crossroad")
-							for road in crossroads:
-								print (road.pos, end='')
-							print()
+							#print("---- Add crossroad")
+							#for road in crossroads:
+							#	print (road.pos, end='')
+							#print()
 							
 						if not link.has( next_road):
 							if next_road.road_type==Road.START: # Find the END
 								link.end=next_road
-								print("============ end link", link.end.pos)
+								#print("============ end link", link.end.pos)
 								stop = True
 							else:
 								link.append(next_road)
@@ -140,15 +181,17 @@ class Map():
 							current_road = crossroads[-1]
 							if len(link.get_neighbours_remaining(current_road)) <= 0:
 								crossroads.pop()
-								print("---- Pop a crossroad")
-								for road in crossroads:
-									print (road.pos, end='')
-								print()
+								#print("---- Pop a crossroad")
+								#for road in crossroads:
+								#	print (road.pos, end='')
+								#print()
 							current_road = crossroads[-1]
-							print("current_road reset to crosseroad:", current_road.pos)
+							#print("current_road reset to crosseroad:", current_road.pos)
 							break
 				if link != None and link.end != None :
+					link.clean()
 					self.links.append(link)
+					
 		
 		print("Map:computeLinks find ",len(self.links)," links")
 		for link in self.links:
