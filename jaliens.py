@@ -188,17 +188,16 @@ class Block(pygame.sprite.Sprite):
 	SIZE = (25,25)
 
 	
-	def __init__(self,pos,neighbours,block_color_type):
+	def __init__(self,pos,block_color_type):
 		"""
 		Parameters
 		----------
 		pos: tuple(x,y)
 		"""
 		pygame.sprite.Sprite.__init__(self, self.containers)
-		self.neighbours=neighbours
 		self.pos = pos
-		self.image = load_image("unknow.tif")
-		val = (pos[X]*self.SIZE[X]+self.SIZE[X]/4 -1,pos[Y]*self.SIZE[Y]+self.SIZE[Y]/4 -1)
+		self.image = load_image("unknow.jpg")
+		val = (pos[X]*self.SIZE[X]+self.SIZE[X]/2 ,pos[Y]*self.SIZE[Y]+self.SIZE[Y]/2 )
 		self.rect = self.image.get_rect(center=(val))
 		self.reloading = 0
 		self.origtop = self.rect.top
@@ -233,7 +232,8 @@ class Road(Block):
 	START=11
 	
 	def __init__(self,pos,neighbours,block_color_type):
-		Block.__init__(self,pos,neighbours,block_color_type)
+		Block.__init__(self,pos,block_color_type)
+		self.neighbours = neighbours
 		if block_color_type == Block.COLOR_START :
 			self.road_type = self.START
 			self.image=load_image('road_start.jpg')
@@ -314,9 +314,10 @@ class Player(pygame.sprite.Sprite):
 		# See if the Sprite block has collided with anything in the Group block_list
 		# The True flag will remove the sprite in block_list
 		blocks_hit_list = pygame.sprite.spritecollide(self, blocks, False)
-		if len(blocks_hit_list) == 0:
+		if len(blocks_hit_list) == 0 or type(blocks_hit_list[0]) is not Road:
 			self.rect.move_ip(-xdir*Block.SIZE[X], -ydir*Block.SIZE[Y])
 			return 
+		
 		
 		rect = self.rect.clamp(SCREENRECT)
 		self.direction=(xdir,ydir)
@@ -409,7 +410,7 @@ def main(winstyle = 0):
 				if start == None : start = blk
 				
 			elif  block_color_type == Block.COLOR_UNKNOWN:
-				blk=Block(pos,neighbours,block_color_type)
+				blk=Block(pos,block_color_type)
 				
 			if type(blk) is Road :  t_map.roads[(x,y)]=blk
 				
