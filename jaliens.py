@@ -84,10 +84,6 @@ class Link():
 		
 		stop = False
 		while(stop == False):
-			print("---- clean list")
-			for road in self.roads:
-				print (road.pos, end='')
-			print()
 			to_remove = list()
 			if len(self.roads) == 0 : return
 			last = self.start
@@ -95,27 +91,17 @@ class Link():
 			counter = 0
 			for road in self.roads[:]:
 				counter+=1
-				print("last: ", last.pos, "road: ", road.pos)
 				if abs(road.pos[X] - last.pos[X]) > 1 or abs(road.pos[Y] - last.pos[Y]) > 1 or \
 					 (road.pos[X] != last.pos[X] and road.pos[Y] != last.pos[Y]) :
 					to_remove.append(last)
 					new_list = [item for item in self.roads if item not in to_remove]
 					self.roads = new_list
-					print("break after having removed:", to_remove[0].pos )
 					break
 				else:
 					last = road
 					
 			if counter == len(self.roads):
-				print("stop = true")
 				stop = True
-
-			
-		
-		print("---- STOP clean list")
-		for road in self.roads:
-			print (road.pos, end='')
-		print()
 		
 		
 class Map():
@@ -147,47 +133,33 @@ class Map():
 		self.set_roads_neighbour_instance()
 		
 		for start in self.starts.values():
-			#print("start", start.pos)
 			for start_neigs in start.get_roads_neighbours().values():
 				link = Link(start=start)
 				current_road = start_neigs
 				#print("append", current_road.pos)
 				link.append(current_road)
 				stop=False
-				counter=30
 				crossroads = list()
-				while stop == False:# and counter >= 0:
-					counter-=1
-					#print("current road", current_road.pos)
+				while stop == False:
 					for next_road in current_road.get_roads_neighbours().values():
-						#print("next_road", next_road.pos,"remaining neighbours: ", len(link.get_neighbours_remaining(next_road)))
 						if len(link.get_neighbours_remaining(next_road)) > 1:
 							crossroads.append(next_road)
-							#print("---- Add crossroad")
-							#for road in crossroads:
-							#	print (road.pos, end='')
-							#print()
-							
 						if not link.has( next_road):
 							if next_road.road_type==Road.START: # Find the END
 								link.end=next_road
-								#print("============ end link", link.end.pos)
 								stop = True
+								break
 							else:
 								link.append(next_road)
 								current_road=next_road
 								break
-						if len(link.get_neighbours_remaining(current_road)) <= 0 :
-							current_road = crossroads[-1]
-							if len(link.get_neighbours_remaining(current_road)) <= 0:
-								crossroads.pop()
-								#print("---- Pop a crossroad")
-								#for road in crossroads:
-								#	print (road.pos, end='')
-								#print()
-							current_road = crossroads[-1]
-							#print("current_road reset to crosseroad:", current_road.pos)
-							break
+						else : # road already in link	
+							if len(link.get_neighbours_remaining(current_road)) <= 0 :
+								if len(crossroads) >= 1:
+									current_road = crossroads.pop()
+								else:
+									stop=True
+									break
 				if link != None and link.end != None :
 					link.clean()
 					self.links.append(link)
@@ -199,11 +171,11 @@ class Map():
 				print("start", link.start.pos,"end: ", link.end.pos,"len",len(link.roads))
 			else:
 				print("start", link.start.pos,"end: ", "NA" ,"len",len(link.roads))
-			
+			"""
 			for block in link.roads:
 				print(block.pos,end='')
 			print("\n")
-			
+			"""
 
 
 #Block.images = [ver,hor,br,bl,tl,tr,cross,tbr,tbl,tlr,blr,start,un]
@@ -226,7 +198,7 @@ class Block(pygame.sprite.Sprite):
 		self.neighbours=neighbours
 		self.pos = pos
 		self.image = load_image("unknow.tif")
-		val = (pos[0]*self.SIZE[0]+self.SIZE[0]/2,pos[1]*self.SIZE[1]+self.SIZE[0]/2)
+		val = (pos[X]*self.SIZE[X]+self.SIZE[X]/4 -1,pos[Y]*self.SIZE[Y]+self.SIZE[Y]/4 -1)
 		self.rect = self.image.get_rect(center=(val))
 		self.reloading = 0
 		self.origtop = self.rect.top
@@ -426,10 +398,10 @@ def main(winstyle = 0):
 			blk=None
 			if block_color_type == Block.COLOR_ROAD or block_color_type == Block.COLOR_START:
 				neighbours={'UP':False,'DOWN':False ,'RIGHT':False ,'LEFT':False}
-				if Block.get_color_type(pixels[x,y-1]) == Block.COLOR_ROAD:neighbours['UP']=True
-				if Block.get_color_type(pixels[x,y+1]) == Block.COLOR_ROAD:neighbours['DOWN']=True
-				if Block.get_color_type(pixels[x+1,y]) == Block.COLOR_ROAD:neighbours['RIGHT']=True
-				if Block.get_color_type(pixels[x-1,y]) == Block.COLOR_ROAD:neighbours['LEFT']=True
+				if y-1 >=0 and Block.get_color_type(pixels[x,y-1]) == Block.COLOR_ROAD:neighbours['UP']=True
+				if y+1 < y_len and Block.get_color_type(pixels[x,y+1]) == Block.COLOR_ROAD:neighbours['DOWN']=True
+				if x+1 < x_len and  Block.get_color_type(pixels[x+1,y]) == Block.COLOR_ROAD:neighbours['RIGHT']=True
+				if x-1 >= 0 and Block.get_color_type(pixels[x-1,y]) == Block.COLOR_ROAD:neighbours['LEFT']=True
 				blk=Road(pos,neighbours,block_color_type)
 				
 			if  block_color_type == Block.COLOR_START:
@@ -443,7 +415,9 @@ def main(winstyle = 0):
 				
 	t_map.computeLinks()
 	#initialize our starting sprites
-	player = Player(start.pos)
+	if start != None:
+		player = Player(start.pos)
+	else: player = Player((0,0))
 	
 	piste=list()
 	
