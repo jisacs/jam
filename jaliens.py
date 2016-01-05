@@ -104,34 +104,63 @@ class Map():
 
 	def computeLinks(self):
 		self.set_roads_neighbour_instance()
+		
 		for start in self.starts.values():
+			print("start", start.pos)
 			for start_neigs in start.get_roads_neighbours().values():
 				link = Link(start=start)
 				current_road = start_neigs
+				print("append", current_road.pos)
 				link.append(current_road)
 				stop=False
-				while stop == False:
+				counter=30
+				crossroads = list()
+				while stop == False:# and counter >= 0:
+					counter-=1
+					print("current road", current_road.pos)
 					for next_road in current_road.get_roads_neighbours().values():
+						print("next_road", next_road.pos,"remaining neighbours: ", len(link.get_neighbours_remaining(next_road)))
+						if len(link.get_neighbours_remaining(next_road)) > 1:
+							crossroads.append(next_road)
+							print("---- Add crossroad")
+							for road in crossroads:
+								print (road.pos, end='')
+							print()
+							
 						if not link.has( next_road):
 							if next_road.road_type==Road.START: # Find the END
 								link.end=next_road
+								print("============ end link", link.end.pos)
 								stop = True
 							else:
 								link.append(next_road)
 								current_road=next_road
-								if len(link.get_neighbours_remaining(current_road)) <= 0 :
-									stop = True
-									link = None
-				if link != None:
+								break
+						if len(link.get_neighbours_remaining(current_road)) <= 0 :
+							current_road = crossroads[-1]
+							if len(link.get_neighbours_remaining(current_road)) <= 0:
+								crossroads.pop()
+								print("---- Pop a crossroad")
+								for road in crossroads:
+									print (road.pos, end='')
+								print()
+							current_road = crossroads[-1]
+							print("current_road reset to crosseroad:", current_road.pos)
+							break
+				if link != None and link.end != None :
 					self.links.append(link)
 		
 		print("Map:computeLinks find ",len(self.links)," links")
 		for link in self.links:
-			print(link.start.pos,link.end.pos)
+			if link.end!= None:
+				print("start", link.start.pos,"end: ", link.end.pos,"len",len(link.roads))
+			else:
+				print("start", link.start.pos,"end: ", "NA" ,"len",len(link.roads))
+			
 			for block in link.roads:
 				print(block.pos,end='')
 			print("\n")
-
+			
 
 
 #Block.images = [ver,hor,br,bl,tl,tr,cross,tbr,tbl,tlr,blr,start,un]
