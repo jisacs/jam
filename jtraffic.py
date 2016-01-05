@@ -147,6 +147,9 @@ class Map():
 						if not link.has( next_road):
 							if next_road.road_type==Road.START: # Find the END
 								link.end=next_road
+								if link != None and link.end != None :
+									link.clean()
+									self.links.append(link)
 								stop = True
 								break
 							else:
@@ -160,11 +163,7 @@ class Map():
 								else:
 									stop=True
 									break
-				if link != None and link.end != None :
-					link.clean()
-					self.links.append(link)
 					
-		
 		print("Map:computeLinks find ",len(self.links)," links")
 		for link in self.links:
 			if link.end!= None:
@@ -292,10 +291,17 @@ class Road(Block):
 class Player(pygame.sprite.Sprite):
 	size = 10
 	bounce = 24
-	images = []
+			#Load images, assign to sprite classes
+		#(do this before the classes are used, after screen setup)
+	
 	def __init__(self,pos):
+		self.img_up = load_image('carup.jpg')
+		self.img_down = load_image('cardown.jpg')
+		self.img_right = load_image('carright.jpg')
+		self.img_left = load_image('carleft.jpg')
+		
 		pygame.sprite.Sprite.__init__(self, self.containers)
-		self.image = self.images[0]
+		self.image = self.img_up
 		self.pos=pos
 		val = (pos[X]*Block.SIZE[X]+Block.SIZE[X]/2,pos[Y]*Block.SIZE[Y]+Block.SIZE[Y]/2)
 		self.rect = self.image.get_rect(center=val)
@@ -311,152 +317,137 @@ class Player(pygame.sprite.Sprite):
 		if xdir == 0 and ydir == 0:
 			return
 		self.rect.move_ip(xdir*Block.SIZE[X], ydir*Block.SIZE[Y])
+		#self.rect.move_ip(xdir, ydir)
 		# See if the Sprite block has collided with anything in the Group block_list
 		# The True flag will remove the sprite in block_list
 		blocks_hit_list = pygame.sprite.spritecollide(self, blocks, False)
-		if len(blocks_hit_list) == 0 or type(blocks_hit_list[0]) is not Road:
+		#print("len",  len(blocks_hit_list))
+		#print("blocks_hit_list[0]", blocks_hit_list[0].rect , "self.rect", self.rect)
+		#rect(x, y, width, heigh)
+		#block_rect = blocks_hit_list[0].rect
+		
+		if len(blocks_hit_list) == 0 or type(blocks_hit_list[0]) is not Road:# or\
+			#self.rect[0] < block_rect[0] or self.rect[0]+self.rect[2] > block_rect[0] + block_rect[2] or \
+			#self.rect[1] < block_rect[1] or self.rect[1]+self.rect[3] > block_rect[1] + block_rect[3]  : 
+			
 			self.rect.move_ip(-xdir*Block.SIZE[X], -ydir*Block.SIZE[Y])
-			return 
+			#self.rect.move_ip(-xdir, -ydir)
+			rect = self.rect.clamp(SCREENRECT)
+			return
 		
-		
+
 		rect = self.rect.clamp(SCREENRECT)
 		self.direction=(xdir,ydir)
 		
 		if xdir < 0:
-			self.image = self.images[IMAGE_LEFT]
+			self.image = self.img_left
 		elif xdir > 0:
-			self.image = self.images[IMAGE_RIGHT]
+			self.image = self.img_right
 		elif ydir < 0:
-			self.image = self.images[IMAGE_UP]
+			self.image = self.img_up
 		elif ydir > 0:
-			self.image = self.images[IMAGE_DOWN]
+			self.image = self.img_down
 
 
-def main(winstyle = 0):
-	# Initialize pygame
-	pygame.init()
-	t_map = Map()
+class Application():
+	def main(self,winstyle = 0):
+		# Initialize pygame
+		pygame.init()
+		t_map = Map()
+
+		# Set the display mode
+		winstyle = 0  # |FULLSCREEN
+		bestdepth = pygame.display.mode_ok(SCREENRECT.size, winstyle, 32)
+		screen = pygame.display.set_mode(SCREENRECT.size, winstyle, bestdepth)
 
 
-	# Set the display mode
-	winstyle = 0  # |FULLSCREEN
-	bestdepth = pygame.display.mode_ok(SCREENRECT.size, winstyle, 32)
-	screen = pygame.display.set_mode(SCREENRECT.size, winstyle, bestdepth)
 
-	#Load images, assign to sprite classes
-	#(do this before the classes are used, after screen setup)
-	up = load_image('carup.jpg')
-	down = load_image('cardown.jpg')
-	right = load_image('carright.jpg')
-	left = load_image('carleft.jpg')
-	Player.images = [up,down,right,left]
-	
-	#decorate the game window
-	pygame.display.set_caption('Pygame Aliens')
-	#pygame.mouse.set_visible(0)
-	"""
-	#create the background, tile the bgd image
-	"""
-	
-	bgdtile = load_image('fond_sillingy.tif')
-	background = pygame.Surface(SCREENRECT.size)
-	for x in range(0, SCREENRECT.width, bgdtile.get_width()):
-		for y in range(0, SCREENRECT.width, bgdtile.get_height()):
-			background.blit(bgdtile, (x, y))
-	screen.blit(background, (0,0))
-	pygame.display.flip()
-	
-	
-	#roads = pygame.sprite.Group()
-	#all = pygame.sprite.RenderUpdates()
-	blocks = pygame.sprite.Group()
-	all = pygame.sprite.LayeredUpdates() # more sophisticated, can draw sprites in layers 
-
-	#assign default groups to each sprite class
-	Player.containers = all
-	#Block.containers = roads,all
-	Block.containers=blocks,all
-	
-	
-
-	#Create Some Starting Values
-	clock = pygame.time.Clock()
-
-	
-	pixels = getPixelArray(os.path.join (main_dir, 'data', 'easy.tif'))
-	#roads =  pygame.PixelArray (surface)
-	#print('road:',type(road))
-	#Block(roads[0,0],Block.START) #note, this 'lives' because it goes into a sprite group7
-	
-	x_len,y_len,z_len = pixels.shape
-	
-	start = None
-	for x in range(x_len):
-		for y in range(y_len):
-			color = pixels[x,y]
-			block_color_type = Block.get_color_type(color)
-			pos = (x,y)
-			blk=None
-			if block_color_type == Block.COLOR_ROAD or block_color_type == Block.COLOR_START:
-				neighbours={'UP':False,'DOWN':False ,'RIGHT':False ,'LEFT':False}
-				if y-1 >=0 and Block.get_color_type(pixels[x,y-1]) == Block.COLOR_ROAD:neighbours['UP']=True
-				if y+1 < y_len and Block.get_color_type(pixels[x,y+1]) == Block.COLOR_ROAD:neighbours['DOWN']=True
-				if x+1 < x_len and  Block.get_color_type(pixels[x+1,y]) == Block.COLOR_ROAD:neighbours['RIGHT']=True
-				if x-1 >= 0 and Block.get_color_type(pixels[x-1,y]) == Block.COLOR_ROAD:neighbours['LEFT']=True
-				blk=Road(pos,neighbours,block_color_type)
-				
-			if  block_color_type == Block.COLOR_START:
-				blk=Road(pos,neighbours,block_color_type)
-				if start == None : start = blk
-				
-			elif  block_color_type == Block.COLOR_UNKNOWN:
-				blk=Block(pos,block_color_type)
-				
-			if type(blk) is Road :  t_map.roads[(x,y)]=blk
-				
-	t_map.computeLinks()
-	#initialize our starting sprites
-	if start != None:
-		player = Player(start.pos)
-	else: player = Player((0,0))
-	
-	piste=list()
-	
-	
-	#allgroup.change_layer(player,0)
-	while player.alive():
-
-		#get input
-		for event in pygame.event.get():
-			if event.type == QUIT or \
-				(event.type == KEYDOWN and event.key == K_ESCAPE) :
-					return
-		keystate = pygame.key.get_pressed()
-
-		# clear/erase the last drawn sprites
-		all.clear(screen, background)
-
-		#update all the sprites1
-		all.update()
-		#handle player input
+		
+		#decorate the game window
+		pygame.display.set_caption('Pygame Aliens')
+		#pygame.mouse.set_visible(0)
 		"""
-		UP DOWN LEFT RIGHT
-		272 273 274   275
+		#create the background, tile the bgd image
 		"""
-		player.move(keystate,blocks)
+		
+		bgdtile = load_image('white_map.jpg')
+		background = pygame.Surface(SCREENRECT.size)
+		for x in range(0, SCREENRECT.width, bgdtile.get_width()):
+			for y in range(0, SCREENRECT.width, bgdtile.get_height()):
+				background.blit(bgdtile, (x, y))
+		screen.blit(background, (0,0))
+		pygame.display.flip()
+		blocks = pygame.sprite.Group()
+		all = pygame.sprite.LayeredUpdates() # more sophisticated, can draw sprites in layers 
+		#assign default groups to each sprite class
+		Player.containers = all
+		Block.containers=blocks,all
+		#Create Some Starting Values
+		clock = pygame.time.Clock()
+		pixels = getPixelArray(os.path.join (main_dir, 'data', 'easy.tif'))
+		x_len,y_len,z_len = pixels.shape
+		
+		start = None
+		for x in range(x_len):
+			for y in range(y_len):
+				color = pixels[x,y]
+				block_color_type = Block.get_color_type(color)
+				pos = (x,y)
+				blk=None
+				if block_color_type == Block.COLOR_ROAD or block_color_type == Block.COLOR_START:
+					neighbours={'UP':False,'DOWN':False ,'RIGHT':False ,'LEFT':False}
+					if y-1 >=0 and Block.get_color_type(pixels[x,y-1]) == Block.COLOR_ROAD:neighbours['UP']=True
+					if y+1 < y_len and Block.get_color_type(pixels[x,y+1]) == Block.COLOR_ROAD:neighbours['DOWN']=True
+					if x+1 < x_len and  Block.get_color_type(pixels[x+1,y]) == Block.COLOR_ROAD:neighbours['RIGHT']=True
+					if x-1 >= 0 and Block.get_color_type(pixels[x-1,y]) == Block.COLOR_ROAD:neighbours['LEFT']=True
+					blk=Road(pos,neighbours,block_color_type)
+					
+				if  block_color_type == Block.COLOR_START:
+					blk=Road(pos,neighbours,block_color_type)
+					if start == None : start = blk
+					
+				elif  block_color_type == Block.COLOR_UNKNOWN:
+					blk=Block(pos,block_color_type)
+					
+				if type(blk) is Road :  t_map.roads[(x,y)]=blk
+					
+		t_map.computeLinks()
+		#initialize our starting sprites
+		if start != None:
+			player = Player(start.pos)
+		else: player = Player((0,0))
+		
+		piste=list()
+		
+		#allgroup.change_layer(player,0)
+		while player.alive():
 
-		#draw the scene
-		dirty = all.draw(screen)
-		pygame.display.update(dirty)
+			#get input
+			for event in pygame.event.get():
+				if event.type == QUIT or \
+					(event.type == KEYDOWN and event.key == K_ESCAPE) :
+						return
+			keystate = pygame.key.get_pressed()
 
-		#cap the framerate
-		clock.tick(10)
+			# clear/erase the last drawn sprites
+			all.clear(screen, background)
 
-	pygame.time.wait(1000)
-	pygame.quit()
+			#update all the sprites1
+			all.update()
+			#handle player input
+			"""
+			UP DOWN LEFT RIGHT
+			272 273 274   275
+			"""
+			player.move(keystate,blocks)
 
+			#draw the scene
+			dirty = all.draw(screen)
+			pygame.display.update(dirty)
 
+			#cap the framerate
+			clock.tick(20)
 
-#call the "main" function if running this script
-if __name__ == '__main__': main()
+		pygame.time.wait(1000)
+		pygame.quit()
 
